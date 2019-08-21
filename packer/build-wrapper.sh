@@ -21,8 +21,8 @@ cat <<EOF
 
     Example:
 
-    build-wrapper.sh --hail-version 0.2.18 --vep-version 96 --hail-bucket privo-hail \
-                     --var-file builds/emr-5.25.0.vars --vpc-var-file builds/vpcs/privo-development-aperry.vars
+   build-wrapper.sh --hail-version 0.2.18 --vep-version 96 --hail-bucket YOUR_HAIL_BUCKET \
+    --var-file builds/emr-5.25.0.vars --vpc-var-file builds/vpcs/account123-vpc01.vars
 
 EOF
 }

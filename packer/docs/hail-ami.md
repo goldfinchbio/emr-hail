@@ -11,7 +11,7 @@
 
 ## Description
 
-A CloudFormation template will deploy AWS CodeBuild Projects that can be used to build specific combinations of Hail, Spark, and VEP.  The local packer folder is zipped and pushed to an S3 bucket to be used as the build source.
+A CloudFormation template will deploy AWS CodeBuild Projects that can be used to build specific combinations of [Hail](https://hail.is), [Spark](https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark.html), and [VEP](https://useast.ensembl.org/info/docs/tools/vep/index.html).  The local packer folder is zipped and pushed to an S3 bucket to be used as the build source.
 
 The Hail master branch HEAD can be used as a build source by **omitting** the `HAIL_VERSION` variable from your CodeBuild Project in CloudFormation.
 

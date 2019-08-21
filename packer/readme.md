@@ -45,7 +45,7 @@
 
 The build directory contains variable definitions that are used as arguments to the primary build JSON, [amazon-linux.json](amazon-linux.json).
 
-Target VPCs, which may exist in remote accounts, are broken out into individual files under `builds/vpcs`.  There is an example VPC var file in the repository.  After adjusting the settings there you will need to update the path to that file in the [../../hail-ami.yml](hail-ami.yml) CloudFormation for the appropriate CodeBuild project.
+Target VPCs, which may exist in remote accounts, are broken out into individual files under `builds/vpcs`.  There is an example VPC var file in the repository.  After adjusting the settings there you will need to update the path to that file in the [hail-ami.yml](../hail-ami.yml) CloudFormation for the appropriate CodeBuild project.
 
 ### CodeBuild
 
