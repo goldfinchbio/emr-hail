@@ -1,0 +1,304 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "SageMaker Jupyter Instance for use with Hail on EMR"
+
+
+Parameters:
+
+  pIngressCidr:
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    Description: "Required - CIDR is allowed full security group ingress.  Examples - VPC CIDR, VPN CIDR, etc."
+    Type: "String"
+
+  pInstanceType:
+    AllowedValues:
+      - "ml.t2.medium"
+      - "ml.t2.large"
+      - "ml.t2.xlarge"
+      - "ml.t2.2xlarge"
+      - "ml.t3.medium"
+      - "ml.t3.large"
+      - "ml.t3.xlarge"
+      - "ml.t3.2large"
+    Default: "ml.t2.medium"
+    Description: "Required"
+    Type: "String"
+
+  pName:
+    Description: "Required - Used as the name of the notebook instance and S3 backup location.  Recommend username.  Example: aperry"
+    Type: "String"
+
+  pS3bucketHail:
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
+    Description: "Required - Bucket with Hail resources - cache, etc.  Notebook instance will have full read."
+    Type: "String"
+
+  pS3bucketJupyter:
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
+    Description: "Required - /home/ec2-user/SageMaker will be backed up to this bucket. Scripts and common notebooks may also be pulled from this bucket."
+    Type: "String"
+
+  pSubnetId:
+    Description: "Required - Target subnet for Notebook server.  Private subnet is strongly suggested as browser access will still be available via the AWS console."
+    Type: "AWS::EC2::Subnet::Id"
+
+  pTagEnvironment:
+    AllowedValues:
+      - "production"
+      - "staging"
+      - "sandbox"
+      - "test"
+      - "development"
+      - "qa"
+      - "dr"
+    Default: "development"
+    Description: "Optional - Environment type for default resource tagging."
+    Type: "String"
+
+  pTagOwner:
+    Default: ""
+    Description: "Optional - Owner of the resources.  Person/Department, etc."
+    Type: "String"
+
+  pVolumeSize:
+    Default: "20"
+    Description: "Required - Size (GB)."
+    MaxValue: "500"
+    MinValue: "5"
+    Type: "Number"
+
+  pVpcId:
+    Description: "Required - Notebook is deployed in this VPC."
+    Type: "AWS::EC2::VPC::Id"
+
+
+Metadata:
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Network Details"
+        Parameters:
+          - "pVpcId"
+          - "pSubnetId"
+          - "pIngressCidr"
+      - Label:
+          default: "Instance Details"
+        Parameters:
+          - "pName"
+          - "pInstanceType"
+          - "pVolumeSize"
+      - Label:
+          default: "S3 Resources"
+        Parameters:
+          - "pS3bucketHail"
+          - "pS3bucketJupyter"
+      - Label:
+          default: "Tagging"
+        Parameters:
+          - "pTagEnvironment"
+          - "pTagOwner"
+    ParameterLabels:
+      pVpcId:
+        default: "VPC ID"
+      pSubnetId:
+        default: "Subnet ID"
+      pIngressCidr:
+        default: "Ingress CIDR"
+      pName:
+        default: "Instance Name"
+      pInstanceType:
+        default: "Instance Type"
+      pVolumeSize:
+        default: "Volume Size"
+      pS3bucketHail:
+        default: "Hail Bucket"
+      pS3bucketJupyter:
+        default: "Jupyter Bucket"
+      pTagOwner:
+        default: "Owner"
+      pTagEnvironment:
+        default: "Environment"
+
+
+Resources:
+
+  instance:
+    Type: "AWS::SageMaker::NotebookInstance"
+    Properties:
+      DirectInternetAccess: "Disabled"
+      InstanceType: !Ref pInstanceType
+      RoleArn: !GetAtt role.Arn
+      LifecycleConfigName: !GetAtt lifecycleConfiguration.NotebookInstanceLifecycleConfigName
+      NotebookInstanceName: !Ref pName
+      RootAccess: Enabled
+      SubnetId: !Ref pSubnetId
+      VolumeSizeInGB: !Ref pVolumeSize
+      SecurityGroupIds:
+        - !Ref sg
+      Tags:
+        - Key: "Name"
+          Value: !Ref pName
+        - Key: "environment"
+          Value: !Ref pTagEnvironment
+        - Key: "owner"
+          Value: !Ref pTagOwner
+
+  lifecycleConfiguration:
+    Type: "AWS::SageMaker::NotebookInstanceLifecycleConfig"
+    Properties:
+      NotebookInstanceLifecycleConfigName: !Sub "${pName}"
+      OnCreate:
+        - Content:
+            Fn::Base64: !Sub |
+              #!/bin/bash
+              set -ex
+
+              BUCKET="${pS3bucketJupyter}"
+              EC2_USER_BIN="/home/ec2-user/SageMaker/bin/"
+              sudo -u ec2-user -i <<EOF
+              set -ex
+              /usr/bin/aws s3 cp s3://"$BUCKET"/scripts/ "$EC2_USER_BIN" --recursive
+              find "$EC2_USER_BIN" -type f -exec chmod -v 700 {} \;
+              EOF
+      OnStart:
+        - Content:
+            Fn::Base64: !Sub |
+              #!/bin/bash
+              set -ex
+
+              BUCKET="${pS3bucketJupyter}"
+              DIRECTORY="/home/ec2-user/SageMaker/"
+
+              # Conda/Pip additions
+              sudo -u ec2-user -i <<EOF
+              source /home/ec2-user/anaconda3/bin/activate JupyterSystemEnv
+              # Required for "%manage_spark"
+              jupyter labextension install @jupyter-widgets/jupyterlab-manager
+              conda remove sparkmagic --yes
+              # Sparkmagic 0.12.8 must be coupled with livy 0.6+ in EMR
+              pip install sparkmagic==0.12.8 bokeh==1.2.0 sagemaker-pyspark==1.2.4 pyspark==2.3.2
+              jupyter-kernelspec install --sys-prefix /home/ec2-user/anaconda3/envs/JupyterSystemEnv/lib/python3.6/site-packages/sparkmagic/kernels/pysparkkernel/
+              source /home/ec2-user/anaconda3/bin/deactivate
+              EOF
+
+              # Copy previously backed up user notebooks
+              /usr/bin/aws s3 cp s3://$BUCKET/${pName}/ $DIRECTORY --recursive
+              # Reset bin permissions
+              find "$DIRECTORY/bin/" -type f -exec chmod -v 700 {} \;
+              # Copy common organization notebooks.  This will overwrite common notebooks previously saved to the home directory
+              /usr/bin/aws s3 cp s3://$BUCKET/common-notebooks/ $DIRECTORY/common-notebooks/ --recursive
+              # sudo chown "ec2-user":"ec2-user" $DIRECTORY --recursive
+
+              # Use the system AWS, since ec2-user may change conda environments
+              CMD="/usr/bin/aws s3 sync $DIRECTORY s3://$BUCKET/${pName}/ > /home/ec2-user/s3-backup.log 2>&1"
+              chown "ec2-user":"ec2-user" $DIRECTORY --recursive
+              # Backup the notebook details to S3 on 5 minute intervals
+              cronjob="*/5 * * * * $CMD"
+              echo "$cronjob" | crontab -u "ec2-user" -
+
+  role:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "sagemaker.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: "s3FullUserPathControl"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "s3:*"
+                Resource:
+                  - !Sub "arn:aws:s3:::${pS3bucketJupyter}/${pName}/*"
+              - Effect: "Allow"
+                Action:
+                  - "s3:ListObject"
+                  - "s3:ListBucket"
+                Resource: !Sub "arn:aws:s3:::${pS3bucketJupyter}"
+        - PolicyName: "s3ListPaths"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "s3:ListBucket"
+                Resource:
+                  - !Sub "arn:aws:s3:::${pS3bucketJupyter}"
+                Condition:
+                  StringLike:
+                    s3:prefix:
+                      - !Sub "${pName}/"
+                      - "scripts/"
+                      - "common-notebooks/"
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                Resource:
+                  - !Sub "arn:aws:s3:::${pS3bucketJupyter}/scripts/*"
+                  - !Sub "arn:aws:s3:::${pS3bucketJupyter}/common-notebooks/*"
+        - PolicyName: "s3hailFullRead"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:Get*"
+                  - "s3:List*"
+                Resource:
+                  - !Sub "arn:aws:s3:::${pS3bucketHail}/*"
+                  - !Sub "arn:aws:s3:::${pS3bucketHail}"
+        - PolicyName: "cloudwatchWrite"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "logs:CreateLogStream"
+                  - "logs:CreateLogGroup"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+        - PolicyName: "emrListClusters"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "elasticmapreduce:ListInstances"
+                  - "elasticmapreduce:ListBootstrapActions"
+                  - "elasticmapreduce:ListClusters"
+                  - "elasticmapreduce:DescribeCluster"
+                  - "elasticmapreduce:ListInstanceGroups"
+                Resource: "*"
+      RoleName: !Sub "sagemaker-jupyter-${pName}"
+
+  sg:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      VpcId: !Ref pVpcId
+      GroupDescription: "Security group for Sagemaker Notebook to connect to Hail cluster."
+      SecurityGroupIngress:
+        - IpProtocol: "-1"
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !Ref pIngressCidr
+          Description: "Full Access"
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          FromPort: -1
+          ToPort: -1
+          CidrIp: "0.0.0.0/0"
+          Description: "all"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "sagemaker-jupyter-${pName}"
+        - Key: "environment"
+          Value: !Ref pTagEnvironment
+        - Key: "owner"
+          Value: !Ref pTagOwner
