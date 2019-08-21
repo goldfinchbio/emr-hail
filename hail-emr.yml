@@ -1,0 +1,605 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "EMR with Hail and VEP"
+
+
+Parameters:
+
+  pAmi:
+    Description: "Required - packer built in the local account"
+    Type: "AWS::EC2::Image::Id"
+
+  pClusterName:
+    Description: "Required"
+    MinLength: 3
+    Type: "String"
+
+  pEmrCoreInstanceCount:
+    Default: 1
+    Description: "Required - must be 1 or greater."
+    MinValue: 1 # Cannot be 0.
+    Type: "Number"
+
+  pEmrCoreInstanceDataVolSize:
+    Default: "100"
+    Description: "Required - GB. Secondary GP2 data volume for CORE nodes. Available on /mnt."
+    MaxValue: "2000"
+    MinValue: "20"
+    Type: "Number"
+
+  pEmrCoreInstanceSize:
+    AllowedValues:
+      - "c1.medium"
+      - "c1.xlarge"
+      - "c3.xlarge"
+      - "c3.2xlarge"
+      - "c3.4xlarge"
+      - "c3.8xlarge"
+      - "c4.large"
+      - "c4.xlarge"
+      - "c4.2xlarge"
+      - "c4.4xlarge"
+      - "c4.8xlarge"
+      - "c5.xlarge"
+      - "c5.2xlarge"
+      - "c5.4xlarge"
+      - "c5.9xlarge"
+      - "c5.18xlarge"
+      - "cc2.8xlarge"
+      - "cg1.4xlarge"
+      - "cr1.8xlarge"
+      - "d2.xlarge"
+      - "d2.2xlarge"
+      - "d2.4xlarge"
+      - "d2.8xlarge"
+      - "g2.2xlarge"
+      - "hi1.4xlarge"
+      - "hs1.8xlarge"
+      - "i2.xlarge"
+      - "i2.2xlarge"
+      - "i2.4xlarge"
+      - "i2.8xlarge"
+      - "i3.xlarge"
+      - "i3.2xlarge"
+      - "i3.4xlarge"
+      - "i3.8xlarge"
+      - "i3.16xlarge"
+      - "m1.medium"
+      - "m1.large"
+      - "m1.xlarge"
+      - "m2.xlarge"
+      - "m2.2xlarge"
+      - "m2.4xlarge"
+      - "m3.xlarge"
+      - "m3.2xlarge"
+      - "m4.large"
+      - "m4.xlarge"
+      - "m4.2xlarge"
+      - "m4.4xlarge"
+      - "m4.10xlarge"
+      - "m4.16xlarge"
+      - "m5.xlarge"
+      - "m5.2xlarge"
+      - "m5.4xlarge"
+      - "m5.12xlarge"
+      - "m5.24xlarge"
+      - "p2.xlarge"
+      - "p2.8xlarge"
+      - "p2.16xlarge"
+      - "p3.2xlarge"
+      - "p3.8xlarge"
+      - "p3.16xlarge"
+      - "r3.xlarge"
+      - "r3.2xlarge"
+      - "r3.4xlarge"
+      - "r3.8xlarge"
+      - "r4.xlarge"
+      - "r4.2xlarge"
+      - "r4.4xlarge"
+      - "r4.8xlarge"
+      - "r4.16xlarge"
+    Default: "m5.2xlarge"
+    Description: "Required"
+    Type: "String"
+
+  pEmrInstanceRootVolSize:
+    Default: "100"
+    Description: "Required - GB.  Root volume size for ALL cluster instances."
+    MinValue: "60"
+    Type: "Number"
+
+  pEmrInstanceTerminationProtection:
+    AllowedValues:
+      - "true"
+      - "false"
+    Default: "false"
+    Description: "Required - Applies to all EC2 Instances in the cluster."
+    Type: "String"
+
+  pEmrMasterInstanceSize:
+    AllowedValues:
+      - "c1.medium"
+      - "c1.xlarge"
+      - "c3.xlarge"
+      - "c3.2xlarge"
+      - "c3.4xlarge"
+      - "c3.8xlarge"
+      - "c4.large"
+      - "c4.xlarge"
+      - "c4.2xlarge"
+      - "c4.4xlarge"
+      - "c4.8xlarge"
+      - "c5.xlarge"
+      - "c5.2xlarge"
+      - "c5.4xlarge"
+      - "c5.9xlarge"
+      - "c5.18xlarge"
+      - "cc2.8xlarge"
+      - "cg1.4xlarge"
+      - "cr1.8xlarge"
+      - "d2.xlarge"
+      - "d2.2xlarge"
+      - "d2.4xlarge"
+      - "d2.8xlarge"
+      - "g2.2xlarge"
+      - "hi1.4xlarge"
+      - "hs1.8xlarge"
+      - "i2.xlarge"
+      - "i2.2xlarge"
+      - "i2.4xlarge"
+      - "i2.8xlarge"
+      - "i3.xlarge"
+      - "i3.2xlarge"
+      - "i3.4xlarge"
+      - "i3.8xlarge"
+      - "i3.16xlarge"
+      - "m1.medium"
+      - "m1.large"
+      - "m1.xlarge"
+      - "m2.xlarge"
+      - "m2.2xlarge"
+      - "m2.4xlarge"
+      - "m3.xlarge"
+      - "m3.2xlarge"
+      - "m4.large"
+      - "m4.xlarge"
+      - "m4.2xlarge"
+      - "m4.4xlarge"
+      - "m4.10xlarge"
+      - "m4.16xlarge"
+      - "m5.xlarge"
+      - "m5.2xlarge"
+      - "m5.4xlarge"
+      - "m5.12xlarge"
+      - "m5.24xlarge"
+      - "p2.xlarge"
+      - "p2.8xlarge"
+      - "p2.16xlarge"
+      - "p3.2xlarge"
+      - "p3.8xlarge"
+      - "p3.16xlarge"
+      - "r3.xlarge"
+      - "r3.2xlarge"
+      - "r3.4xlarge"
+      - "r3.8xlarge"
+      - "r4.xlarge"
+      - "r4.2xlarge"
+      - "r4.4xlarge"
+      - "r4.8xlarge"
+      - "r4.16xlarge"
+    Default: "m5.2xlarge"
+    Type: "String"
+
+  pEmrReleaseLabel:
+    AllowedValues:
+      - "emr-5.25.0"
+    Default: "emr-5.25.0"
+    Description: "Required"
+    Type: "String"
+
+  pIngressCidr:
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    Description: "Required - Must be a CIDR.  Use /32 for a single IP.  Allows full network ingress to ALL EMR nodes.  Example uses would be VPC or VPN/Office access."
+    Type: "String"
+
+  pKeyName:
+    Description: "Required"
+    Type: "AWS::EC2::KeyPair::KeyName"
+
+  pKmsEbsArn:
+    Description: "Optional - if the source AMI is encrypted specify the full key ARN.  Otherwise, leave blank.  This does NOT automatically enable EBS encryption."
+    Default: ""
+    Type: "String"
+
+  pLivyIngressCidr:
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    Description: "Required - CIDR will be allowed access to the master node on port 3998.  Example use would be the CIDR containing a SageMaker Notebook instance."
+    Type: "String"
+
+  pS3LogBucket:
+    Description: "Required - Specify the name of a pre-existing bucket"
+    Type: "String"
+
+  pSubnetId:
+    Description: "Required - nodes will be deployed in this subnet."
+    Type: "AWS::EC2::Subnet::Id"
+
+  pTagEnvironment:
+    AllowedValues:
+      - "beta"
+      - "dev"
+      - "development"
+      - "dr"
+      - "test"
+      - "production"
+      - "qa"
+      - "sandbox"
+      - "staging"
+    Default: "development"
+    Description: "Optional - Environment type for default resource tagging."
+    Type: "String"
+
+  pTagOwner:
+    Default: ""
+    Description: "Optional - Owner of the resources.  Person/Department, etc."
+    Type: "String"
+
+  pVpcId:
+    Description: "Required"
+    Type: "AWS::EC2::VPC::Id"
+
+
+Metadata:
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Network Details"
+        Parameters:
+          - "pVpcId"
+          - "pSubnetId"
+          - "pIngressCidr"
+          - "pLivyIngressCidr"
+      - Label:
+          default: "Cluster Primary Settings"
+        Parameters:
+          - "pAmi"
+          - "pClusterName"
+          - "pEmrReleaseLabel"
+          - "pKeyName"
+          - "pEmrInstanceRootVolSize"
+          - "pKmsEbsArn"
+          - "pS3LogBucket"
+          - "pEmrInstanceTerminationProtection"
+      - Label:
+          default: "Master Instance Settings"
+        Parameters:
+          - "pEmrMasterInstanceSize"
+      - Label:
+          default: "Core Instance Settings"
+        Parameters:
+          - "pEmrCoreInstanceCount"
+          - "pEmrCoreInstanceSize"
+          - "pEmrCoreInstanceDataVolSize"
+      - Label:
+          default: "Tagging"
+        Parameters:
+          - "pTagEnvironment"
+          - "pTagOwner"
+    ParameterLabels:
+      pAmi:
+        default: "Hail AMI"
+      pClusterName:
+        default: "Cluster Name"
+      pEmrCoreInstanceCount:
+        default: "Number of Core Instances"
+      pEmrCoreInstanceDataVolSize:
+        default: "Scratch Volume Size"
+      pEmrCoreInstanceSize:
+        default: "Core Instance Size"
+      pEmrInstanceRootVolSize:
+        default: "Root Volume Size"
+      pEmrInstanceTerminationProtection:
+        default: "Instance Termination Protection"
+      pEmrMasterInstanceSize:
+        default: "Master Instance Size"
+      pEmrReleaseLabel:
+        default: "EMR Release"
+      pIngressCidr:
+        default: "Ingress CIDR"
+      pKeyName:
+        default: "Instance KeyPair"
+      pKmsEbsArn:
+        default: "EBS KMS Key ARN"
+      pLivyIngressCidr:
+        default: "Livy Access CIDR"
+      pS3LogBucket:
+        default: "S3 Log Bucket Name"
+      pSubnetId:
+        default: "Subnet ID"
+      pTagEnvironment:
+        default: "Environment Tag"
+      pTagOwner:
+        default: "Owner Tag"
+      pVpcId:
+        default: "VPC ID"
+
+
+Conditions:
+
+  CondEnableEncryption: !Not [ !Equals [ !Ref pKmsEbsArn, "" ] ]
+
+
+Resources:
+
+  cluster:
+    Type: "AWS::EMR::Cluster"
+    Properties:
+      Applications:
+        - Name: "Ganglia"
+        - Name: "Hadoop"
+        - Name: "Hive"
+        - Name: "Livy"
+        - Name: "Spark"
+      BootstrapActions:
+        - Name: pythonDateutilReinstall
+          ScriptBootstrapAction:
+            Path: "file:/usr/bin/sudo"
+            Args:
+              - "python3"
+              - "-m"
+              - "pip"
+              - "install"
+              - "-I"
+              - "python-dateutil"
+        - Name: vepCacheOwner
+          ScriptBootstrapAction:
+            Path: "file:/usr/bin/sudo"
+            Args:
+              - "chown"
+              - "-R"
+              - "hadoop:hadoop"
+              - "/opt/vep/cache"
+      Configurations:
+        - Classification: "spark-defaults"
+          ConfigurationProperties:
+            spark.driver.extraClassPath: "/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/goodies/lib/emr-spark-goodies.jar:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/usr/share/aws/hmclient/lib/aws-glue-datacatalog-spark-client.jar:/usr/share/java/Hive-JSON-Serde/hive-openx-serde.jar:/usr/share/aws/sagemaker-spark-sdk/lib/sagemaker-spark-sdk.jar:/usr/share/aws/emr/s3select/lib/emr-s3-select-spark-connector.jar:/opt/hail/hail-all-spark.jar"
+            spark.executor.extraClassPath: "/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/goodies/lib/emr-spark-goodies.jar:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/usr/share/aws/hmclient/lib/aws-glue-datacatalog-spark-client.jar:/usr/share/java/Hive-JSON-Serde/hive-openx-serde.jar:/usr/share/aws/sagemaker-spark-sdk/lib/sagemaker-spark-sdk.jar:/usr/share/aws/emr/s3select/lib/emr-s3-select-spark-connector.jar:/opt/hail/hail-all-spark.jar"
+            spark.serializer: "org.apache.spark.serializer.KryoSerializer"
+            spark.kryo.registrator: "is.hail.kryo.HailKryoRegistrator"
+        - Classification: "livy-conf"
+          ConfigurationProperties:
+            livy.file.local-dir-whitelist: "/home/hadoop/"
+            livy.server.session.timeout: "168h"          # 1 week
+            livy.server.session.timeout-check: "false"   # Do not terminate idle sessions
+        - Classification: "spark-env"
+          Configurations:
+            - Classification: "export"
+              ConfigurationProperties:
+                PYSPARK_PYTHON: "/usr/bin/python3"
+        - Classification: "yarn-env"
+          Configurations:
+            - Classification: "export"
+              ConfigurationProperties:
+                PYSPARK_PYTHON: "/usr/bin/python3"
+      CustomAmiId: !Ref pAmi
+      EbsRootVolumeSize: !Ref pEmrInstanceRootVolSize
+      Instances:
+        AdditionalMasterSecurityGroups:
+          - !Ref sgEmrMasterAccess
+        AdditionalSlaveSecurityGroups:
+          - !Ref sgEmrSlaveAccess
+        Ec2KeyName: !Ref pKeyName
+        Ec2SubnetId: !Ref pSubnetId
+        MasterInstanceGroup:
+          InstanceCount: 1
+          InstanceType: !Ref pEmrMasterInstanceSize
+          Market: "ON_DEMAND"
+          Name: "Master Instance Group"
+        CoreInstanceGroup:
+          InstanceCount: !Ref pEmrCoreInstanceCount
+          InstanceType: !Ref pEmrCoreInstanceSize
+          Market: "ON_DEMAND"
+          Name: "Core Instance Group"
+          EbsConfiguration:
+            EbsBlockDeviceConfigs:
+              - VolumeSpecification:
+                  SizeInGB: !Ref pEmrCoreInstanceDataVolSize
+                  VolumeType: "gp2"
+                VolumesPerInstance: 1
+        TerminationProtected: !Ref pEmrInstanceTerminationProtection
+      JobFlowRole: !Ref instanceProfileEmrEc2
+      LogUri: !Join ["", ["s3://", !Ref pS3LogBucket, "/elasticmapreduce/"]]
+      Name: !Ref pClusterName
+      ReleaseLabel: !Ref pEmrReleaseLabel
+      ServiceRole: !Ref roleEmr
+      Steps:
+        - ActionOnFailure: "CONTINUE"
+          HadoopJarStep:
+            Args:
+              - "sudo"
+              - "mkdir"
+              - "-p"
+              - "/var/www/html/plots"
+            Jar: "command-runner.jar"
+          Name: "hailApachePlotDir"
+        - ActionOnFailure: "CONTINUE"
+          HadoopJarStep:
+            Args:
+              - "sudo"
+              - "ln"
+              - "-s"
+              - "/var/www/html/plots"
+              - "/plots"
+            Jar: "command-runner.jar"
+          Name: "hailMainPlotDir"
+        - ActionOnFailure: "CONTINUE"
+          HadoopJarStep:
+            Args:
+              - "sudo"
+              - "chown"
+              - "livy:livy"
+              - "/var/www/html/plots"
+            Jar: "command-runner.jar"
+          Name: "hailLivyPlotOwnership"
+      Tags:
+        - Key: "Name"
+          Value: !Ref pClusterName
+        - Key: "environment"
+          Value: !Ref pTagEnvironment
+        - Key: "owner"
+          Value: !Ref pTagOwner
+      VisibleToAllUsers: true
+
+  instanceProfileEmrEc2:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref roleEmrEc2
+      InstanceProfileName: !Join ["-",["emr-ec2", !Ref pClusterName]]
+
+  policyEc2EbsEncryption:
+    Condition: "CondEnableEncryption"
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "allowEbsGenerateDataKey"
+            Action: "kms:GenerateDataKey"
+            Effect: "Allow"
+            Resource: !Ref pKmsEbsArn
+      PolicyName: "kms-ebs-generate-data-key"
+      Roles:
+        - !Ref roleEmrEc2
+
+  policyEmrEbsEncryption:
+    Condition: "CondEnableEncryption"
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "allowEbsGenerateDataKey"
+            Action:
+              - "kms:CreateGrant"
+              - "kms:Decrypt"
+              - "kms:DescribeKey"
+              - "kms:Encrypt"
+              - "kms:GenerateDataKeyWithoutPlaintext"
+              - "kms:ReEncrypt*"
+            Effect: "Allow"
+            Resource: !Ref pKmsEbsArn
+      PolicyName: "kms-ebs-access"
+      Roles:
+        - !Ref roleEmr
+
+  roleEmr:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2008-10-17"
+        Statement:
+          - Sid: ""
+            Effect: "Allow"
+            Principal:
+              Service: "elasticmapreduce.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceRole"
+      RoleName: !Join ["-", ["emr-cluster", !Ref pClusterName]]
+
+  roleEmrEc2:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2008-10-17"
+        Statement:
+          - Sid: ""
+            Effect: "Allow"
+            Principal:
+              Service: "ec2.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforEC2Role"
+      RoleName: !Join ["-",["emr-ec2", !Ref pClusterName]]
+
+  # Add full ingress from master.  Separate from in group rules to prevent cyclical dependencies.
+  sgIngressEmrMaster:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      GroupId: !Ref sgEmrSlaveAccess
+      IpProtocol: "-1"
+      FromPort: -1
+      ToPort: -1
+      SourceSecurityGroupId: !Ref sgEmrMasterAccess
+      Description: "Full Ingress from master node"
+
+  sgEmrMasterAccess:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: !Join ["-",["emr-master", !Ref pClusterName]]
+      GroupDescription: "emr master node access"
+      VpcId: !Ref pVpcId
+      SecurityGroupIngress:
+        - IpProtocol: "-1"
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !Ref pIngressCidr
+          Description: "Full Ingress"
+        - IpProtocol: "tcp"
+          FromPort: 3998
+          ToPort: 3998
+          CidrIp: !Ref pLivyIngressCidr
+          Description: "Livy Access"
+        - IpProtocol: "-1"
+          FromPort: -1
+          ToPort: -1
+          SourceSecurityGroupId: !Ref sgEmrSlaveAccess
+          Description: "Full Ingress from slave nodes"
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          FromPort: -1
+          ToPort: -1
+          CidrIp: "0.0.0.0/0"
+          Description: "all"
+      Tags:
+        - Key: "Name"
+          Value: !Join ["-",["emr-master", !Ref pClusterName]]
+        - Key: "managed-by"
+          Value: "cloudformation"
+        - Key: "environment"
+          Value: !Ref pTagEnvironment
+        - Key: "owner"
+          Value: !Ref pTagOwner
+
+  sgEmrSlaveAccess:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: !Join ["-",["emr-slave", !Ref pClusterName]]
+      GroupDescription: "emr slave node access"
+      VpcId: !Ref pVpcId
+      SecurityGroupIngress:
+        - IpProtocol: "-1"
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !Ref pIngressCidr
+          Description: "Full Ingress"
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          FromPort: -1
+          ToPort: -1
+          CidrIp: "0.0.0.0/0"
+          Description: "all"
+      Tags:
+        - Key: "Name"
+          Value: !Join ["-",["emr-slave", !Ref pClusterName]]
+        - Key: "managed-by"
+          Value: "cloudformation"
+        - Key: "environment"
+          Value: !Ref pTagEnvironment
+        - Key: "owner"
+          Value: !Ref pTagOwner
+

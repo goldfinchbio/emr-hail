@@ -1,0 +1,286 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Packer based Hail AMI Creation via AWS Codebuild. Adjust file paths in individual build Projects"
+
+
+Parameters:
+
+  pKmsEbsArn:
+    Description: "Optional - If region level EBS encryption is enabled specify the full key ARN.  Otherwise, leave blank.  This does NOT automatically encrypt your AMI."
+    Default: ""
+    Type: "String"
+
+  pS3bucketHail:
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
+    Description: "Required - VEP cache and Packer zip should be located here."
+    Type: "String"
+
+  pS3packerZipLocation:
+    Default: "ami/packer.zip"
+    Description: "Required - S3 Key where you will upload the Packer Zip for new AMI builds in the Hail Bucket."
+    Type: "String"
+
+
+Metadata:
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Settings"
+        Parameters:
+          - "pS3bucketHail"
+          - "pS3packerZipLocation"
+          - "pKmsEbsArn"
+    ParameterLabels:
+      pKmsEbsArn:
+        default: "EBS KMS Key ARN"
+      pS3bucketHail:
+        default: "Hail Bucket"
+      pS3packerZipLocation:
+        default: "Packer Zip S3 Location"
+
+
+Conditions:
+
+  CondEnableEncryption: !Not [ !Equals [ !Ref pKmsEbsArn, "" ] ]
+
+
+Resources:
+
+  hail0216vep85:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Artifacts:
+        Type: "NO_ARTIFACTS"
+      Description: "Hail 0.2.16 with VEP 85"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        EnvironmentVariables:
+          - Name: "CORE_VAR_FILE"
+            Type: "PLAINTEXT"
+            Value: "builds/emr-5.25.0.vars"
+          - Name: "VPC_VAR_FILE"
+            Type: "PLAINTEXT"
+            Value: "builds/vpcs/YOUR_VPC_VAR_FILE.vars"
+          - Name: "HAIL_VERSION"
+            Type: "PLAINTEXT"
+            Value: "0.2.16"
+          - Name: "VEP_VERSION"
+            Type: "PLAINTEXT"
+            Value: "85"
+          - Name: "HAIL_BUCKET"
+            Type: "PLAINTEXT"
+            Value: !Ref pS3bucketHail
+        Image: "alpine"
+        PrivilegedMode: true
+        Type: "LINUX_CONTAINER"
+      Name: "hail-0216_vep-85"
+      ServiceRole: !GetAtt roleHailPacker.Arn
+      Source:
+        BuildSpec: "codebuild/buildspec.yml"
+        Location: !Sub "${pS3bucketHail}/${pS3packerZipLocation}"
+        Type: "S3"
+      TimeoutInMinutes: 120
+
+  hail0216vep96:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Artifacts:
+        Type: "NO_ARTIFACTS"
+      Description: "Hail 0.2.16 with VEP 96"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        EnvironmentVariables:
+          - Name: "CORE_VAR_FILE"
+            Type: "PLAINTEXT"
+            Value: "builds/emr-5.25.0.vars"
+          - Name: "VPC_VAR_FILE"
+            Type: "PLAINTEXT"
+            Value: "builds/vpcs/YOUR_VPC_VAR_FILE.vars"
+          - Name: "HAIL_VERSION"
+            Type: "PLAINTEXT"
+            Value: "0.2.16"
+          - Name: "VEP_VERSION"
+            Type: "PLAINTEXT"
+            Value: "96"
+          - Name: "HAIL_BUCKET"
+            Type: "PLAINTEXT"
+            Value: !Ref pS3bucketHail
+        Image: alpine
+        PrivilegedMode: true
+        Type: "LINUX_CONTAINER"
+      Name: "hail-0216_vep-96"
+      ServiceRole: !GetAtt roleHailPacker.Arn
+      Source:
+        BuildSpec: "codebuild/buildspec.yml"
+        Location: !Sub "${pS3bucketHail}/${pS3packerZipLocation}"
+        Type: "S3"
+      TimeoutInMinutes: 120
+
+  hailMasterVep96:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Artifacts:
+        Type: "NO_ARTIFACTS"
+      Description: "Hail Master Branch with VEP 96"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        EnvironmentVariables:
+          - Name: "CORE_VAR_FILE"
+            Type: "PLAINTEXT"
+            Value: "builds/emr-5.25.0.vars"
+          - Name: "VPC_VAR_FILE"
+            Type: "PLAINTEXT"
+            Value: "builds/vpcs/YOUR_VPC_VAR_FILE.vars"
+          - Name: "VEP_VERSION"
+            Type: "PLAINTEXT"
+            Value: "96"
+          - Name: "HAIL_BUCKET"
+            Type: "PLAINTEXT"
+            Value: !Ref pS3bucketHail
+        Image: alpine
+        PrivilegedMode: true
+        Type: "LINUX_CONTAINER"
+      Name: "hail-master_vep-96"
+      ServiceRole: !GetAtt roleHailPacker.Arn
+      Source:
+        BuildSpec: "codebuild/buildspec.yml"
+        Location: !Sub "${pS3bucketHail}/${pS3packerZipLocation}"
+        Type: "S3"
+      TimeoutInMinutes: 120
+
+  instanceProfileHailPacker:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref roleHailPacker
+      InstanceProfileName: !Ref roleHailPacker
+
+  policyEmrEbsEncryption:
+    Condition: "CondEnableEncryption"
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "allowEbsGenerateDataKey"
+            Action:
+              - "kms:CreateGrant"
+              - "kms:Decrypt"
+              - "kms:DescribeKey"
+              - "kms:Encrypt"
+              - "kms:GenerateDataKeyWithoutPlaintext"
+              - "kms:ReEncrypt*"
+            Effect: "Allow"
+            Resource: !Ref pKmsEbsArn
+      PolicyName: "kms-ebs-access"
+      Roles:
+        - !Ref roleHailPacker
+
+  roleHailPacker:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: "hail-packer"
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "codebuild.amazonaws.com"
+                - "ec2.amazonaws.com"
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: "CodeBuildServiceAccess"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - !Join ["", ["arn:aws:logs:*:", !Ref "AWS::AccountId", ":log-group:/aws/codebuild/*"]]
+              - Effect: "Allow"
+                Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                Resource: !Sub "arn:aws:s3:::${pS3bucketHail}/*"
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetBucketLocation"
+                  - "s3:ListBucket"
+                Resource: !Sub "arn:aws:s3:::${pS3bucketHail}"
+        - PolicyName: "CodeBuildServiceEc2Vpc"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "ec2:CreateNetworkInterface"
+                  - "ec2:DescribeDhcpOptions"
+                  - "ec2:DescribeNetworkInterfaces"
+                  - "ec2:DeleteNetworkInterface"
+                  - "ec2:DescribeSubnets"
+                  - "ec2:DescribeSecurityGroups"
+                  - "ec2:DescribeVpcs"
+                Resource: "*"
+              - Effect: "Allow"
+                Action:
+                  - "ec2:CreateNetworkInterfacePermission"
+                Resource: !Join ["", ["arn:aws:ec2:*:", !Ref "AWS::AccountId", ":network-interface/*"]]
+                Condition:
+                  StringEquals:
+                    ec2:AuthorizedService: "codebuild.amazonaws.com"
+        - PolicyName: "PackerMinimumBuildAccess"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "ec2:AttachVolume"
+                  - "ec2:AuthorizeSecurityGroupIngress"
+                  - "ec2:CopyImage"
+                  - "ec2:CreateImage"
+                  - "ec2:CreateKeypair"
+                  - "ec2:CreateSecurityGroup"
+                  - "ec2:CreateSnapshot"
+                  - "ec2:CreateTags"
+                  - "ec2:CreateVolume"
+                  - "ec2:DeleteKeyPair"
+                  - "ec2:DeleteSecurityGroup"
+                  - "ec2:DeleteSnapshot"
+                  - "ec2:DeleteVolume"
+                  - "ec2:DeregisterImage"
+                  - "ec2:DescribeImageAttribute"
+                  - "ec2:DescribeImages"
+                  - "ec2:DescribeInstances"
+                  - "ec2:DescribeInstanceStatus"
+                  - "ec2:DescribeRegions"
+                  - "ec2:DescribeSecurityGroups"
+                  - "ec2:DescribeSnapshots"
+                  - "ec2:DescribeSubnets"
+                  - "ec2:DescribeTags"
+                  - "ec2:DescribeVolumes"
+                  - "ec2:DetachVolume"
+                  - "ec2:GetPasswordData"
+                  - "ec2:ModifyImageAttribute"
+                  - "ec2:ModifyInstanceAttribute"
+                  - "ec2:ModifySnapshotAttribute"
+                  - "ec2:RegisterImage"
+                  - "ec2:RunInstances"
+                  - "ec2:StopInstances"
+                  - "ec2:TerminateInstances"
+                Resource: "*"
+        - PolicyName: "AdditionalPacker"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "iam:PassRole"
+                Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/hail-packer"  # PassRole on itself for EC2 handoff

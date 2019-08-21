@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Hail S3 Resources"
+
+
+Parameters:
+
+  pHailBucket:
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
+    Description: "Required - Contains cache, bootstrapping, etc.  S3-SSE encryption at rest."
+    Type: "String"
+
+  pLogBucket:
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
+    Description: "Required - Will use S3-SSE encryption at rest."
+    Type: "String"
+
+  pSageMakerBucket:
+    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
+    Description: "Required - SageMaker Jupyter home directories will be sync'd here.  S3-SSE encryption at rest."
+    Type: "String"
+
+  pTagEnvironment:
+    AllowedValues:
+      - "production"
+      - "staging"
+      - "sandbox"
+      - "test"
+      - "development"
+      - "qa"
+      - "dr"
+    Default: "development"
+    Description: "Optional - Environment type for default resource tagging."
+    Type: "String"
+
+  pTagOwner:
+    Type: "String"
+    Description: "Optional - Owner of the resources.  Person/Department, etc."
+    Default: ""
+
+
+Metadata:
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Bucket Details"
+        Parameters:
+          - "pHailBucket"
+          - "pSageMakerBucket"
+          - "pLogBucket"
+      - Label:
+          default: "Tagging"
+        Parameters:
+          - "pTagOwner"
+          - "pTagEnvironment"
+    ParameterLabels:
+      pHailBucket:
+        default: "Hail Bucket Name"
+      pSageMakerBucket:
+        default: "Sagemaker Home Directory Bucket Name"
+      pLogBucket:
+        default: "EMR Log Bucket Name"
+      pTagOwner:
+        default: "Owner Tag"
+      pTagEnvironment:
+        default: "Environment Tag"
+
+
+Resources:
+
+  logBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref pLogBucket
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: "AES256"
+      Tags:
+        - Key: "environment"
+          Value: !Ref pTagEnvironment
+        - Key: "managed-by"
+          Value: "cloudformation"
+        - Key: "owner"
+          Value: !Ref pTagOwner
+
+  sagemakerBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref pSageMakerBucket
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: "AES256"
+      Tags:
+        - Key: "environment"
+          Value: !Ref pTagEnvironment
+        - Key: "managed-by"
+          Value: "cloudformation"
+        - Key: "owner"
+          Value: !Ref pTagOwner
+
+  hailBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref pHailBucket
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: "AES256"
+      Tags:
+        - Key: "environment"
+          Value: !Ref pTagEnvironment
+        - Key: "managed-by"
+          Value: "cloudformation"
+        - Key: "owner"
+          Value: !Ref pTagOwner

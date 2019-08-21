@@ -1,0 +1,35 @@
+#!/bin/bash
+#
+# Output EMR master IP for livy connections.
+# Validate Livy TCP Ingress
+#
+
+LIVY_PORT=8998
+LIVY_TIMEOUT=1  # seconds
+
+function _getMasterIp {
+    CLUSTER_ID=$1
+    MASTER_INSTANCE_GROUP=$(aws emr describe-cluster --cluster-id "$CLUSTER_ID" --query "Cluster.InstanceGroups[?Name=='Master Instance Group'].Id" --output text)
+    MASTER_IP=$(aws emr list-instances --cluster-id "$CLUSTER_ID" --instance-group-id "$MASTER_INSTANCE_GROUP" --query "Instances[].PrivateIpAddress" --output text)
+    echo "$MASTER_IP"
+}
+
+function _checkConnect() {
+    CLUSTER_IP=$1
+    if nc -z "$CLUSTER_IP" "$LIVY_PORT" -w "$LIVY_TIMEOUT" 1>/dev/null; then
+        echo "Success"
+    else
+        echo "Failed - Check EMR master security group."
+    fi
+}
+
+printf "\e[1m%-32s %-28s %-60s\e[0m\n" "Cluster Name" "Livy Endpoint" "Livy TCP Check"
+
+for INST in $(aws emr list-clusters --active  --query "Clusters[].[join(',',[Name,Id])]" --output text); do
+    CLUSTER_NAME=$(echo "$INST" | cut -d , -f 1)
+    CLUSTER_ID=$(echo "$INST" | cut -d , -f 2)
+    CLUSTER_IP=$(_getMasterIp "$CLUSTER_ID")
+    TCP_CHECK_RESULT=$(_checkConnect "$CLUSTER_IP")
+
+    printf "%-32s %-28s %-60s\n" "$CLUSTER_NAME" "http://$CLUSTER_IP:$LIVY_PORT" "$TCP_CHECK_RESULT"
+done
