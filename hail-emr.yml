@@ -212,7 +212,7 @@ Parameters:
 
   pLivyIngressCidr:
     AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
-    Description: "Required - CIDR will be allowed access to the master node on port 3998.  Example use would be the CIDR containing a SageMaker Notebook instance."
+    Description: "Required - CIDR will be allowed access to the master node on port 8998.  Example use would be the CIDR containing a SageMaker Notebook instance."
     Type: "String"
 
   pS3LogBucket:
@@ -550,8 +550,8 @@ Resources:
           CidrIp: !Ref pIngressCidr
           Description: "Full Ingress"
         - IpProtocol: "tcp"
-          FromPort: 3998
-          ToPort: 3998
+          FromPort: 8998
+          ToPort: 8998
           CidrIp: !Ref pLivyIngressCidr
           Description: "Livy Access"
         - IpProtocol: "-1"
