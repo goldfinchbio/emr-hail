@@ -14,15 +14,18 @@ cat <<EOF
   usage: build-wrapper.sh [ARGUMENTS]
 
     --hail-version  [Number Version]    - OPTIONAL.  If omitted, the current HEAD of master branch will be pulled.
-    --vep-version   [Number Version]    - REQUIRED
+    --vep-version   [Number Version]    - OPTIONAL.  If omitted, VEP will not be included.
     --hail-bucket   [S3 Bucket Name]    - REQUIRED
     --var-file      [Full File Path]    - REQUIRED
     --vpc-var-file  [Full File Path]    - REQUIRED
 
     Example:
 
-   build-wrapper.sh --hail-version 0.2.18 --vep-version 96 --hail-bucket YOUR_HAIL_BUCKET \
-    --var-file builds/emr-5.25.0.vars --vpc-var-file builds/vpcs/account123-vpc01.vars
+   build-wrapper.sh --hail-version 0.2.18 \\
+                    --vep-version 96 \\
+                    --hail-bucket YOUR_HAIL_BUCKET \\
+                    --var-file builds/emr-5.25.0.vars \\
+                    --vpc-var-file builds/vpcs/account123-vpc01.vars
 
 EOF
 }
@@ -70,6 +73,10 @@ if [ -z "$HAIL_VERSION" ]; then
     HAIL_VERSION=$(git ls-remote "$REPOSITORY_URL" refs/heads/master | awk '{print $1}')
     echo "HAIL_VERSION env var unset.  Setting to HEAD of master branch: $HAIL_VERSION"
     HAIL_NAME_VERSION=master-$(echo "$HAIL_VERSION" | cut -c1-7)
+fi
+
+if [ -z "$VEP_VERSION" ]; then
+    VEP_VERSION="none"
 fi
 
 export AWS_MAX_ATTEMPTS=600  # Builds time out with default value

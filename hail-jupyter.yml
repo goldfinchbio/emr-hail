@@ -169,18 +169,6 @@ Resources:
               BUCKET="${pS3bucketJupyter}"
               DIRECTORY="/home/ec2-user/SageMaker/"
 
-              # Conda/Pip additions
-              sudo -u ec2-user -i <<EOF
-              source /home/ec2-user/anaconda3/bin/activate JupyterSystemEnv
-              # Required for "%manage_spark"
-              jupyter labextension install @jupyter-widgets/jupyterlab-manager
-              conda remove sparkmagic --yes
-              # Sparkmagic 0.12.8 must be coupled with livy 0.6+ in EMR
-              pip install sparkmagic==0.12.8 bokeh==1.2.0 sagemaker-pyspark==1.2.4 pyspark==2.3.2
-              jupyter-kernelspec install --sys-prefix /home/ec2-user/anaconda3/envs/JupyterSystemEnv/lib/python3.6/site-packages/sparkmagic/kernels/pysparkkernel/
-              source /home/ec2-user/anaconda3/bin/deactivate
-              EOF
-
               # Copy previously backed up user notebooks
               /usr/bin/aws s3 cp s3://$BUCKET/${pName}/ $DIRECTORY --recursive
               # Reset bin permissions
@@ -195,6 +183,19 @@ Resources:
               # Backup the notebook details to S3 on 5 minute intervals
               cronjob="*/5 * * * * $CMD"
               echo "$cronjob" | crontab -u "ec2-user" -
+
+              # Conda/Pip additions
+              sudo -u ec2-user -i <<EOF
+              source /home/ec2-user/anaconda3/bin/activate JupyterSystemEnv
+              # Required for "%manage_spark"
+              jupyter labextension install @jupyter-widgets/jupyterlab-manager
+              conda remove sparkmagic --yes
+              # Sparkmagic 0.12.8 must be coupled with livy 0.6+ in EMR
+              pip install sparkmagic==0.12.8 bokeh==1.2.0 sagemaker-pyspark==1.2.4 pyspark==2.3.2
+              jupyter-kernelspec install --sys-prefix /home/ec2-user/anaconda3/envs/JupyterSystemEnv/lib/python3.6/site-packages/sparkmagic/kernels/pysparkkernel/
+              source /home/ec2-user/anaconda3/bin/deactivate
+              EOF
+
 
   role:
     Type: "AWS::IAM::Role"

@@ -15,9 +15,12 @@ A CloudFormation template will deploy AWS CodeBuild Projects that can be used to
 
 The Hail master branch HEAD can be used as a build source by **omitting** the `HAIL_VERSION` variable from your CodeBuild Project in CloudFormation.
 
+[VEP](https://useast.ensembl.org/info/docs/tools/vep/index.html) installation can also be excluded by **omitting** the `VEP_VERSION` environment variable.
+
 ## Prerequisites
 
 - `hail-ami.yml` CloudFormation template successfully deployed
+- If using [VEP](https://useast.ensembl.org/info/docs/tools/vep/index.html), the VEP GRCh37 cache, GRCh38 cache, and LOFTEE data files archives must be in your Hail S3 bucket.  Review the [VEP pre-installation instructions](vep-install.md) for details.
 - AWS CLI profile with access to copy files to the S3 bucket/path specified in the CloudFormation template
 
 ## Deployment
