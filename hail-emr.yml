@@ -351,14 +351,6 @@ Resources:
               - "install"
               - "-I"
               - "python-dateutil"
-        - Name: vepCacheOwner
-          ScriptBootstrapAction:
-            Path: "file:/usr/bin/sudo"
-            Args:
-              - "chown"
-              - "-R"
-              - "hadoop:hadoop"
-              - "/opt/vep/cache"
       Configurations:
         - Classification: "spark-defaults"
           ConfigurationProperties:
@@ -371,6 +363,7 @@ Resources:
             livy.file.local-dir-whitelist: "/home/hadoop/"
             livy.server.session.timeout: "168h"          # 1 week
             livy.server.session.timeout-check: "false"   # Do not terminate idle sessions
+            livy.rsc.launcher.port.range: "10500~10550"  # Expand RPC port range and shift above other server ranges
         - Classification: "spark-env"
           Configurations:
             - Classification: "export"
@@ -441,6 +434,15 @@ Resources:
               - "/var/www/html/plots"
             Jar: "command-runner.jar"
           Name: "hailLivyPlotOwnership"
+        - ActionOnFailure: "CONTINUE"
+          HadoopJarStep:
+            Args:
+              - "sudo"
+              - "bash"
+              - "-c"
+              - "if test -d /opt/vep/; then chown -R hadoop:hadoop /opt/vep; fi"
+            Jar: "command-runner.jar"
+          Name: "vepOwnership"
       Tags:
         - Key: "Name"
           Value: !Ref pClusterName
@@ -524,6 +526,7 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforEC2Role"
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
       RoleName: !Join ["-",["emr-ec2", !Ref pClusterName]]
 
   # Add full ingress from master.  Separate from in group rules to prevent cyclical dependencies.

@@ -24,7 +24,7 @@ function install_prereqs {
   lz4-devel \
   python36 \
   python36-devel \
-  python36-setuptools \
+  python36-setuptools
 
   # Upgrade latest latest pip
   python -m pip install --upgrade pip
@@ -32,15 +32,24 @@ function install_prereqs {
 
   WHEELS="argparse
   bokeh
+  cycler
   decorator
+  joblib
   jupyter
+  kiwisolver
+  llvmlite
+  matplotlib
+  numba
   numpy
   oauth
   pandas
   parsimonious
   pyserial
   requests
+  scikit-learn
   scipy
+  seaborn
+  umap-learn
   utils
   wheel"
 
