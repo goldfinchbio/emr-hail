@@ -1,11 +1,13 @@
 # VEP and LOFTEE Pre-Install
 
+## Table of Contents
+
 - [VEP and LOFTEE Pre-Install](#vep-and-loftee-pre-install)
   - [Preqequisites](#preqequisites)
   - [VEP](#vep)
-    - [Installation](#installation)
+    - [S3 Setup](#s3-setup)
   - [LOFTEE](#loftee)
-    - [Installation](#installation-1)
+    - [S3 Setup](#s3-setup-1)
   - [Hail VEP Configuration JSON](#hail-vep-configuration-json)
     - [Release 96 GRCh37 - LOFTEE Included](#release-96-grch37---loftee-included)
     - [Release 96 GRCh38 - no LOFTEE](#release-96-grch38---no-loftee)

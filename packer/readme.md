@@ -3,7 +3,6 @@
 ## Table of Contents
 
 - [Hail Packer Builds](#hail-packer-builds)
-  - [Table of Contents](#table-of-contents)
   - [Directory Structure](#directory-structure)
     - [Builds](#builds)
     - [CodeBuild](#codebuild)

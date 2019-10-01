@@ -3,7 +3,6 @@
 ## Table of Contents
 
 - [Hail AMI Creation via AWS CodeBuild](#hail-ami-creation-via-aws-codebuild)
-  - [Table of Contents](#table-of-contents)
   - [Description](#description)
   - [Prerequisites](#prerequisites)
   - [Deployment](#deployment)

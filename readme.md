@@ -2,6 +2,15 @@
 
 This repository contains resources for repeatable deployments of [Hail](https://hail.is) on AWS EMR and an [AWS Sagemaker](https://aws.amazon.com/sagemaker/faqs) notebook instance configuration to interaction with the Hail cluster.
 
+## Table of Contents
+
+  - [CloudFormation Templates](#cloudformation-templates)
+    - [hail-s3](#hail-s3)
+    - [hail-jupyter](#hail-jupyter)
+    - [hail-ami](#hail-ami)
+    - [hail-emr](#hail-emr)
+  - [Deployment Order](#deployment-order)
+
 ## CloudFormation Templates
 
 ### hail-s3
