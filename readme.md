@@ -25,6 +25,20 @@ When a new SageMaker instance launches it will sync in any scripts in the follow
 
 You may wish to seed those directories in S3 with the identically named directories under `jupyter` in this repository.  Doing so will allow for a working Hail Plotting example.
 
+CLI Example from repository root directory:
+
+```bash
+aws --profile privo-bastion s3 sync jupyter/ s3://<YOUR_JUPYTER_BUCKET>/ --acl bucket-owner-full-control
+```
+
+Post upload, the bucket contents should look similar to this:
+
+```bash
+14:16 $ aws s3 ls --recursive s3://<YOUR_JUPYTER_BUCKET>/
+2019-09-30 14:14:36      13025 common-notebooks/hail-plotting-example.ipynb
+2019-09-30 14:14:36       1244 scripts/list-clusters
+```
+
 ### hail-ami
 
 This template leverages [Packer](https://www.packer.io/) in AWS CodeBuild to create AMIs for use with EMR.  You can specify a specific Hail Version, VEP version, and target VPC and subnet.

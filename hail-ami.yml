@@ -79,7 +79,7 @@ Resources:
         BuildSpec: "codebuild/buildspec.yml"
         Location: !Sub "${pS3bucketHail}/${pS3packerZipLocation}"
         Type: "S3"
-      TimeoutInMinutes: 120
+      TimeoutInMinutes: 180
 
   hail0216vep96:
     Type: "AWS::CodeBuild::Project"
@@ -114,7 +114,39 @@ Resources:
         BuildSpec: "codebuild/buildspec.yml"
         Location: !Sub "${pS3bucketHail}/${pS3packerZipLocation}"
         Type: "S3"
-      TimeoutInMinutes: 120
+      TimeoutInMinutes: 180
+
+  hail0216noVep:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Artifacts:
+        Type: "NO_ARTIFACTS"
+      Description: "Hail 0.2.16"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        EnvironmentVariables:
+          - Name: "CORE_VAR_FILE"
+            Type: "PLAINTEXT"
+            Value: "builds/emr-5.25.0.vars"
+          - Name: "VPC_VAR_FILE"
+            Type: "PLAINTEXT"
+            Value: "builds/vpcs/YOUR_VPC_VAR_FILE.vars"
+          - Name: "HAIL_VERSION"
+            Type: "PLAINTEXT"
+            Value: "0.2.16"
+          - Name: "HAIL_BUCKET"
+            Type: "PLAINTEXT"
+            Value: !Ref pS3bucketHail
+        Image: alpine
+        PrivilegedMode: true
+        Type: "LINUX_CONTAINER"
+      Name: "hail-0216"
+      ServiceRole: !GetAtt roleHailPacker.Arn
+      Source:
+        BuildSpec: "codebuild/buildspec.yml"
+        Location: !Sub "${pS3bucketHail}/${pS3packerZipLocation}"
+        Type: "S3"
+      TimeoutInMinutes: 180
 
   hailMasterVep96:
     Type: "AWS::CodeBuild::Project"
@@ -146,7 +178,36 @@ Resources:
         BuildSpec: "codebuild/buildspec.yml"
         Location: !Sub "${pS3bucketHail}/${pS3packerZipLocation}"
         Type: "S3"
-      TimeoutInMinutes: 120
+      TimeoutInMinutes: 180
+
+  hailMasterNoVep:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Artifacts:
+        Type: "NO_ARTIFACTS"
+      Description: "Hail Master Branch"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        EnvironmentVariables:
+          - Name: "CORE_VAR_FILE"
+            Type: "PLAINTEXT"
+            Value: "builds/emr-5.25.0.vars"
+          - Name: "VPC_VAR_FILE"
+            Type: "PLAINTEXT"
+            Value: "builds/vpcs/YOUR_VPC_VAR_FILE.vars"
+          - Name: "HAIL_BUCKET"
+            Type: "PLAINTEXT"
+            Value: !Ref pS3bucketHail
+        Image: alpine
+        PrivilegedMode: true
+        Type: "LINUX_CONTAINER"
+      Name: "hail-master"
+      ServiceRole: !GetAtt roleHailPacker.Arn
+      Source:
+        BuildSpec: "codebuild/buildspec.yml"
+        Location: !Sub "${pS3bucketHail}/${pS3packerZipLocation}"
+        Type: "S3"
+      TimeoutInMinutes: 180
 
   instanceProfileHailPacker:
     Type: "AWS::IAM::InstanceProfile"
