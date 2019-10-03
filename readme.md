@@ -2,6 +2,15 @@
 
 This repository contains resources for repeatable deployments of [Hail](https://hail.is) on AWS EMR and an [AWS Sagemaker](https://aws.amazon.com/sagemaker/faqs) notebook instance configuration to interaction with the Hail cluster.
 
+## Table of Contents
+
+  - [CloudFormation Templates](#cloudformation-templates)
+    - [hail-s3](#hail-s3)
+    - [hail-jupyter](#hail-jupyter)
+    - [hail-ami](#hail-ami)
+    - [hail-emr](#hail-emr)
+  - [Deployment Order](#deployment-order)
+
 ## CloudFormation Templates
 
 ### hail-s3
@@ -24,6 +33,20 @@ When a new SageMaker instance launches it will sync in any scripts in the follow
 * scripts => /home/ec2-user/SageMaker/bin
 
 You may wish to seed those directories in S3 with the identically named directories under `jupyter` in this repository.  Doing so will allow for a working Hail Plotting example.
+
+CLI Example from repository root directory:
+
+```bash
+aws --profile privo-bastion s3 sync jupyter/ s3://<YOUR_JUPYTER_BUCKET>/ --acl bucket-owner-full-control
+```
+
+Post upload, the bucket contents should look similar to this:
+
+```bash
+14:16 $ aws s3 ls --recursive s3://<YOUR_JUPYTER_BUCKET>/
+2019-09-30 14:14:36      13025 common-notebooks/hail-plotting-example.ipynb
+2019-09-30 14:14:36       1244 scripts/list-clusters
+```
 
 ### hail-ami
 

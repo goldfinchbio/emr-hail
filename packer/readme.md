@@ -3,7 +3,6 @@
 ## Table of Contents
 
 - [Hail Packer Builds](#hail-packer-builds)
-  - [Table of Contents](#table-of-contents)
   - [Directory Structure](#directory-structure)
     - [Builds](#builds)
     - [CodeBuild](#codebuild)
@@ -76,20 +75,21 @@ Builds are executed via the [build wrapper](build-wrapper.sh).  This wrapper has
   Arguments are added via the CLI. Use `./build-wrapper --help` for more details.
 
   ```bash
-  15:15 $ ./build-wrapper.sh --help
-
   usage: build-wrapper.sh [ARGUMENTS]
 
     --hail-version  [Number Version]    - OPTIONAL.  If omitted, the current HEAD of master branch will be pulled.
-    --vep-version   [Number Version]    - REQUIRED
+    --vep-version   [Number Version]    - OPTIONAL.  If omitted, VEP will not be included.
     --hail-bucket   [S3 Bucket Name]    - REQUIRED
     --var-file      [Full File Path]    - REQUIRED
     --vpc-var-file  [Full File Path]    - REQUIRED
 
     Example:
 
-    build-wrapper.sh --hail-version 0.2.18 --vep-version 96 --hail-bucket YOUR_HAIL_BUCKET \
-    --var-file builds/emr-5.25.0.vars --vpc-var-file builds/vpcs/account123-vpc01.vars
+   build-wrapper.sh --hail-version 0.2.18 \
+                    --vep-version 96 \
+                    --hail-bucket YOUR_HAIL_BUCKET \
+                    --var-file builds/emr-5.25.0.vars \
+                    --vpc-var-file builds/vpcs/account123-vpc01.vars
   ```
 
 ## Troubleshooting
