@@ -557,6 +557,11 @@ Resources:
           ToPort: 8998
           CidrIp: !Ref pLivyIngressCidr
           Description: "Livy Access"
+        - IpProtocol: "tcp"
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref pLivyIngressCidr
+          Description: "HTTP for notebook Hail plot retrieval"
         - IpProtocol: "-1"
           FromPort: -1
           ToPort: -1
