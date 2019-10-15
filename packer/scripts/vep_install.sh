@@ -29,9 +29,12 @@ export PATH="$PATH:/usr/local/bin"
 function install_prereqs {
     yum -y install \
         gcc72-c++ \
+        gd-devel \
+        expat-devel \
         git \
         mysql55-devel \
         perl-App-cpanminus \
+        perl-Env \
         unzip \
         which \
         zlib-devel
@@ -42,9 +45,14 @@ function install_prereqs {
         DBD::mysql \
         DBI \
         Digest::MD5 \
+        GD \
         HTTP::Tiny \
         Module::Build \
         Try::Tiny
+
+    # Installed alone due to package dependency issues
+    cpanm \
+        Bio::DB::HTS::Faidx
 }
 
 # gsutil used to pull VEP 85 cache from the Broad
@@ -72,16 +80,16 @@ function vep_install {
         cd ensembl-vep
         git checkout "release/$VEP_VERSION"
 
-        # Auto install (a)pi, (c)ache, and (f)asta
-        tar --directory "$VEP_CACHE_DIR"  -vxf "/tmp/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh37.tar.gz"
+        # Auto install (a)pi, (c)ache, and (f)asta GRCh37
+        tar --directory "$VEP_CACHE_DIR"  -xf "/tmp/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh37.tar.gz"
         perl INSTALL.pl --DESTDIR "$VEP_DIR" --CACHEDIR "$VEP_DIR"/cache --CACHEURL "$VEP_CACHE_DIR" \
              --AUTO acf --SPECIES "$VEP_SPECIES" --ASSEMBLY GRCh37 --NO_HTSLIB --NO_UPDATE
         rm "/tmp/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh37.tar.gz"
 
-        # Auto install (c)ache
-        tar --directory "$VEP_CACHE_DIR"  -vxf "/tmp/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh38.tar.gz"
+        # Auto install (c)ache and (f)asta GRCh38
+        tar --directory "$VEP_CACHE_DIR"  -xf "/tmp/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh38.tar.gz"
         perl INSTALL.pl --DESTDIR "$VEP_DIR" --CACHEDIR "$VEP_DIR"/cache --CACHEURL "$VEP_CACHE_DIR" \
-             --AUTO c --SPECIES "$VEP_SPECIES" --ASSEMBLY GRCh38 --NO_HTSLIB --NO_UPDATE
+             --AUTO cf --SPECIES "$VEP_SPECIES" --ASSEMBLY GRCh38 --NO_HTSLIB --NO_UPDATE
         rm "/tmp/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh38.tar.gz"
 
         # Plugins are installed to $HOME.  Install all plugins, then move to common location
