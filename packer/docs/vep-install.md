@@ -72,11 +72,20 @@ aws s3 mv human_ancestor.fa.gz s3://<YOUR_BUCKET_NAME>/vep/loftee_data/
 
 ## Hail VEP Configuration JSON
 
-The [Hail vep method](https://hail.is/docs/0.2/methods/genetics.html#hail.methods.vep) requires a JSON configuration.  When calling the method the `config` argument can be an S3 path.  The examples below can be stored in your Hail S3 bucket and referenced by their path - E.g. `s3://<YOUR_BUCKET_NAME>/vep-configuration-96-GRCh37.json`
+The [Hail vep method](https://hail.is/docs/0.2/methods/genetics.html#hail.methods.vep) requires a JSON configuration.  When calling the method the `config` argument can be an S3 path.
+
+Below is a notebook example assuming `mt` is an existing [MatrixTable](https://hail.is/docs/0.2/overview/matrix_table.html).
+
+```ipynb
+mt = hl.vep(mt, "s3://<YOUR_BUCKET_NAME>/vep-configuration-GRCh37.json")
+mt.describe()
+```
+
+The examples below can be stored in your Hail S3 bucket and referenced by their path - E.g. `s3://<YOUR_BUCKET_NAME>/vep-configuration-GRCh37.json`.  Configuration files can be re-used across VEP versions as they only reference GRCh version, not the VEP version.
 
 These files are not required for building a successful AMI.  They are only used directly via Hail.
 
-### Release 96 GRCh37 - LOFTEE Included
+### GRCh37 - LOFTEE Included
 
 ```json
 {
@@ -102,7 +111,7 @@ These files are not required for building a successful AMI.  They are only used 
 }
 ```
 
-### Release 96 GRCh38 - no LOFTEE
+### GRCh38 - no LOFTEE
 
 ```json
 {
@@ -115,6 +124,7 @@ These files are not required for building a successful AMI.  They are only used 
                 "--everything",
                 "--allele_number",
                 "--no_stats",
+                "--exclude_null_alleles",
                 "--cache", "--offline",
                 "--minimal",
                 "--assembly", "GRCh38",
