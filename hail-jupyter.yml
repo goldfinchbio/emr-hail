@@ -27,15 +27,15 @@ Parameters:
     Description: "Required - Used as the name of the notebook instance and S3 backup location.  Recommend username.  Example: aperry"
     Type: "String"
 
-  pS3bucketHail:
-    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
-    Description: "Required - Bucket with Hail resources - cache, etc.  Notebook instance will have full read."
-    Type: "String"
-
   pS3bucketJupyter:
-    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
-    Description: "Required - Bucket for Jupyter backups.  /home/ec2-user/SageMaker is backed up here.  Scripts and common notebooks may also be pulled from this bucket."
-    Type: "String"
+    Description: "Required - This parameter is set by the S3 stack.  No changes should be necessary.  S3 bucket with Jupyter scripts, common notebooks, and home directory backups."
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/hail/s3/sagemaker"
+
+  pS3bucketHail:
+    Description: "Required - This parameter is set by the S3 stack.  No changes should be necessary.  Notebook instance will have full read."
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/hail/s3/hail"
 
   pSubnetId:
     Description: "Required - Target subnet for Notebook server.  Private subnet is strongly suggested as browser access will still be available via the AWS console."
@@ -111,9 +111,9 @@ Metadata:
       pVolumeSize:
         default: "Volume Size"
       pS3bucketHail:
-        default: "Hail Bucket"
+        default: "SSM Parameter for Hail Bucket"
       pS3bucketJupyter:
-        default: "Jupyter Bucket"
+        default: "SSM Parameter for SageMaker Bucket"
       pTagOwner:
         default: "Owner"
       pTagEnvironment:

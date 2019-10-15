@@ -84,6 +84,18 @@ Resources:
         - Key: "owner"
           Value: !Ref pTagOwner
 
+  logBucketParameter:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Description: "S3 bucket for EMR logs."
+      Name: "/hail/s3/emrlogs"
+      Tags:
+        environment: !Ref pTagEnvironment
+        managed-by: "cloudformation"
+        owner: !Ref pTagOwner
+      Type: "String"
+      Value: !Ref logBucket
+
   sagemakerBucket:
     Type: "AWS::S3::Bucket"
     Properties:
@@ -100,6 +112,18 @@ Resources:
         - Key: "owner"
           Value: !Ref pTagOwner
 
+  sageMakerBucketParameter:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Description: "S3 bucket with Jupyter scripts, common notebooks, and home directory backups."
+      Name: "/hail/s3/sagemaker"
+      Tags:
+        environment: !Ref pTagEnvironment
+        managed-by: "cloudformation"
+        owner: !Ref pTagOwner
+      Type: "String"
+      Value: !Ref sagemakerBucket
+
   hailBucket:
     Type: "AWS::S3::Bucket"
     Properties:
@@ -115,3 +139,15 @@ Resources:
           Value: "cloudformation"
         - Key: "owner"
           Value: !Ref pTagOwner
+
+  hailBucketParameter:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Description: "S3 bucket with Hail resources.  VEP cache, cluster manifest outputs, etc."
+      Name: "/hail/s3/hail"
+      Tags:
+        environment: !Ref pTagEnvironment
+        managed-by: "cloudformation"
+        owner: !Ref pTagOwner
+      Type: "String"
+      Value: !Ref pHailBucket
