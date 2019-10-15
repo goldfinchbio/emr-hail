@@ -4,12 +4,15 @@ This repository contains resources for repeatable deployments of [Hail](https://
 
 ## Table of Contents
 
-  - [CloudFormation Templates](#cloudformation-templates)
-    - [hail-s3](#hail-s3)
-    - [hail-jupyter](#hail-jupyter)
-    - [hail-ami](#hail-ami)
-    - [hail-emr](#hail-emr)
-  - [Deployment Order](#deployment-order)
+- [CloudFormation Templates](#cloudformation-templates)
+  - [hail-s3](#hail-s3)
+  - [hail-jupyter](#hail-jupyter)
+  - [hail-ami](#hail-ami)
+  - [hail-emr](#hail-emr)
+- [Deployment Order](#deployment-order)
+- [Public AMIs](#public-amis)
+  - [Hail with VEP](#hail-with-vep)
+  - [Hail Only](#hail-only)
 
 ## CloudFormation Templates
 
@@ -17,9 +20,9 @@ This repository contains resources for repeatable deployments of [Hail](https://
 
 This template is deployed once and creates 3 S3 buckets with SSE encryption.
 
-* Hail Bucket - contains VEP cache and configuration JSON for Hail
-* Log Bucket - EMR logs will be written here
-* SageMaker Jupyter Bucket - Users notebooks will be backed up here, and common/example notebooks will be stored here as well.
+- Hail Bucket - contains VEP cache and configuration JSON for Hail
+- Log Bucket - EMR logs will be written here
+- SageMaker Jupyter Bucket - Users notebooks will be backed up here, and common/example notebooks will be stored here as well.
 
 ### hail-jupyter
 
@@ -29,8 +32,8 @@ For example, if a notebook instance is named `aperry` the user could open a term
 
 When a new SageMaker instance launches it will sync in any scripts in the following directories located in the root of the bucket to the noted locations.
 
-* common-notebooks => /home/ec2-user/SageMaker/common-notebooks
-* scripts => /home/ec2-user/SageMaker/bin
+- common-notebooks => /home/ec2-user/SageMaker/common-notebooks
+- scripts => /home/ec2-user/SageMaker/bin
 
 You may wish to seed those directories in S3 with the identically named directories under `jupyter` in this repository.  Doing so will allow for a working Hail Plotting example.
 
@@ -70,3 +73,23 @@ For expected results, deploy the templates in the following order.  Resources cr
 2. hail-jupyter.yml
 3. hail-ami.yml
 4. hail-emr.yml
+
+## Public AMIs
+
+Public AMIs are available in specific regions. Select the AMI for your target region and deploy with the noted version of EMR for best results.
+
+### Hail with VEP
+
+| Region    | Hail Version | VEP Version | EMR Version | AMI ID                |
+|:---------:|:------------:|:-----------:|:-----------:|:--------------------: |
+| us-east-1 | 0.2.25       | 98          | 5.27.0      | ami-0d213446773ba72fc |
+| us-east-2 | 0.2.25       | 98          | 5.27.0      | ami-0e163aa9450175813 |
+| us-west-2 | 0.2.25       | 98          | 5.27.0      | ami-0c6e3d97775f87e7d |
+
+### Hail Only
+
+| Region    | Hail Version | EMR Version | AMI ID                |
+|:---------:|:------------:|:-----------:|:--------------------: |
+| us-east-1 | 0.2.25       | 5.27.0      | ami-0f92e4d60264526f1 |
+| us-east-2 | 0.2.25       | 5.27.0      | ami-0e380f02cad61caf6 |
+| us-west-2 | 0.2.25       | 5.27.0      | ami-0e9d8a565c24d708b |
