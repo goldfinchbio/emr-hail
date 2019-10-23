@@ -2,6 +2,7 @@
   "builders": [{
     "type": "amazon-ebs",
     "associate_public_ip_address": "true",
+    "ssh_interface": "public_ip",
     "source_ami_filter": {
       "filters": {
         "virtualization-type": "hvm",
@@ -35,19 +36,11 @@
       "vep-version": "{{user `vep_version`}}"
     }
   }],
-  "provisioners": [{
-      "type": "shell",
-      "inline": "echo -e '* soft nofile 8192\n* hard nofile 8192' | sudo tee -a /etc/security/limits.conf"
-    },
+  "provisioners": [
     {
       "type": "shell",
-      "environment_vars": [
-        "HAIL_VERSION={{user `hail_version`}}",
-        "SPARK_VERSION={{user `spark_version`}}"
-      ],
-      "execute_command": "sudo -S bash -c 'ulimit -Sn && ulimit -Hn && {{ .Vars }} {{ .Path }}'",
-      "scripts": [
-        "scripts/hail_build.sh"
+      "inline": [
+        "echo -e '* soft nofile 8192\n* hard nofile 8192' | sudo tee -a /etc/security/limits.conf"
       ]
     },
     {
@@ -64,10 +57,22 @@
       ]
     },
     {
+      "type": "shell",
+      "environment_vars": [
+        "HAIL_VERSION={{user `hail_version`}}",
+        "SPARK_VERSION={{user `spark_version`}}"
+      ],
+      "execute_command": "sudo -S bash -c 'ulimit -Sn && ulimit -Hn && {{ .Vars }} {{ .Path }}'",
+      "scripts": [
+        "scripts/hail_build.sh"
+      ]
+    },
+    {
       "type": "file",
       "source": "scripts/R_install.R",
       "destination": "/tmp/R_install.R"
-    }, {
+    },
+    {
       "type": "shell",
       "inline": [
         "sudo yum -y install R",
@@ -77,6 +82,18 @@
     {
       "type": "shell",
       "inline": "sudo sed -i '$d' /etc/security/limits.conf && sudo sed -i '$d' /etc/security/limits.conf"
+    },
+    {
+      "type": "file",
+      "source": "scripts/cluster_manifest.sh",
+      "destination": "/tmp/cluster_manifest.sh"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "chmod 755 /tmp/cluster_manifest.sh",
+        "sudo mv /tmp/cluster_manifest.sh /usr/local/bin/cluster_manifest.sh"
+      ]
     },
     {
       "type": "shell",

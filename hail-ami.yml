@@ -10,9 +10,9 @@ Parameters:
     Type: "String"
 
   pS3bucketHail:
-    AllowedPattern: "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$"
-    Description: "Required - VEP cache and Packer zip should be located here."
-    Type: "String"
+    Description: "Required - This parameter is set by the S3 stack.  No changes should be necessary.  Optional VEP cache can be stored here."
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/hail/s3/hail"
 
   pS3packerZipLocation:
     Default: "ami/packer.zip"
@@ -34,7 +34,7 @@ Metadata:
       pKmsEbsArn:
         default: "EBS KMS Key ARN"
       pS3bucketHail:
-        default: "Hail Bucket"
+        default: "SSM Parameter for Hail Bucket"
       pS3packerZipLocation:
         default: "Packer Zip S3 Location"
 

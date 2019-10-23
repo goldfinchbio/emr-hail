@@ -192,7 +192,9 @@ Parameters:
   pEmrReleaseLabel:
     AllowedValues:
       - "emr-5.25.0"
-    Default: "emr-5.25.0"
+      - "emr-5.26.0"
+      - "emr-5.27.0"
+    Default: "emr-5.27.0"
     Description: "Required"
     Type: "String"
 
@@ -216,8 +218,14 @@ Parameters:
     Type: "String"
 
   pS3LogBucket:
-    Description: "Required - Specify the name of a pre-existing bucket"
-    Type: "String"
+    Description: "Required - This parameter is set by the S3 stack.  No changes should be necessary.  Cluster logs will be stored here."
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/hail/s3/emrlogs"
+
+  pS3HailBucket:
+    Description: "Required - This parameter is set by the S3 stack.  No changes should be necessary.  Cluster Manifests will be put here on cluster launch under /manifests."
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/hail/s3/hail"
 
   pSubnetId:
     Description: "Required - nodes will be deployed in this subnet."
@@ -269,6 +277,7 @@ Metadata:
           - "pEmrInstanceRootVolSize"
           - "pKmsEbsArn"
           - "pS3LogBucket"
+          - "pS3HailBucket"
           - "pEmrInstanceTerminationProtection"
       - Label:
           default: "Master Instance Settings"
@@ -313,7 +322,9 @@ Metadata:
       pLivyIngressCidr:
         default: "Livy Access CIDR"
       pS3LogBucket:
-        default: "S3 Log Bucket Name"
+        default: "SSM Parameter for EMR Log Bucket"
+      pS3HailBucket:
+        default: "SSM Parameter for Hail Bucket"
       pSubnetId:
         default: "Subnet ID"
       pTagEnvironment:
@@ -443,6 +454,12 @@ Resources:
               - "if test -d /opt/vep/; then chown -R hadoop:hadoop /opt/vep; fi"
             Jar: "command-runner.jar"
           Name: "vepOwnership"
+        - ActionOnFailure: "CONTINUE"
+          HadoopJarStep:
+            Args:
+              - "/usr/local/bin/cluster_manifest.sh"
+            Jar: "command-runner.jar"
+          Name: "clusterManifestToS3"
       Tags:
         - Key: "Name"
           Value: !Ref pClusterName
@@ -523,10 +540,25 @@ Resources:
             Principal:
               Service: "ec2.amazonaws.com"
             Action: "sts:AssumeRole"
-      Path: "/"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforEC2Role"
         - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      Path: "/"
+      Policies:
+        - PolicyName: "s3ManifestPutObject"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "s3:PutObject"
+                Resource: !Join [ "", ["arn:aws:s3:::", !Ref pS3HailBucket, ":/manifests/*"]]
+        - PolicyName: "cloudformationDescribeStack"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "cloudformation:DescribeStacks"
+                Resource: !Ref "AWS::StackId"
       RoleName: !Join ["-",["emr-ec2", !Ref pClusterName]]
 
   # Add full ingress from master.  Separate from in group rules to prevent cyclical dependencies.
@@ -610,4 +642,3 @@ Resources:
           Value: !Ref pTagEnvironment
         - Key: "owner"
           Value: !Ref pTagOwner
-

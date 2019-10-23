@@ -77,10 +77,17 @@ function hail_build
     ln -s "$JAVA_PATH" /etc/alternatives/jre/include
   fi
 
-  if [ "$SPARK_VERSION" = "2.2.0" ]; then
-    ./gradlew -Dspark.version="$SPARK_VERSION" shadowJar archiveZip
+  if [ "$HAIL_VERSION" != "master " ] && [[ "$HAIL_VERSION" < 0.2.18 ]]; then
+    if [ "$SPARK_VERSION" = "2.2.0" ]; then
+      ./gradlew -Dspark.version="$SPARK_VERSION" shadowJar archiveZip
+    else
+      ./gradlew -Dspark.version="$SPARK_VERSION" -Dbreeze.version=0.13.2 -Dpy4j.version=0.10.6 shadowJar archiveZip
+    fi
+  elif [ "$HAIL_VERSION" = "master" ] || [[ "$HAIL_VERSION" > 0.2.23 ]]; then
+    make install-on-cluster HAIL_COMPILE_NATIVES=1 SPARK_VERSION="$SPARK_VERSION"
   else
-    ./gradlew -Dspark.version="$SPARK_VERSION" -Dbreeze.version=0.13.2 -Dpy4j.version=0.10.6 shadowJar archiveZip
+    echo "Hail 0.2.19 - 0.2.23 builds are not possible due to incompatiable configurations resolved in 0.2.24."
+    exit 1
   fi
 }
 
@@ -94,7 +101,11 @@ function hail_install
   export PYSPARK_SUBMIT_ARGS="--conf spark.kryo.registrator=is.hail.kryo.HailKryoRegistrator --conf spark.serializer=org.apache.spark.serializer.KryoSerializer pyspark-shell"
   export PYTHONPATH="$HAIL_ARTIFACT_DIR/$ZIP_HAIL:\$SPARK_HOME/python:\$SPARK_HOME/python/lib/py4j-src.zip:\$PYTHONPATH"
 HAIL_PROFILE
-  cp "$PWD/build/distributions/$ZIP_HAIL" "$HAIL_ARTIFACT_DIR"
+
+  if [[ "$HAIL_VERSION" < 0.2.24 ]]; then
+    cp "$PWD/build/distributions/$ZIP_HAIL" "$HAIL_ARTIFACT_DIR"
+  fi
+
   cp "$PWD/build/libs/$JAR_HAIL" "$HAIL_ARTIFACT_DIR"
 }
 
