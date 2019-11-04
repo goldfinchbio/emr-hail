@@ -23,7 +23,7 @@ function _checkConnect() {
     fi
 }
 
-printf "\e[1m%-32s %-28s %-60s\e[0m\n" "Cluster Name" "Livy Endpoint" "Livy TCP Check"
+printf "\e[1m%-32s %-20s %-28s %-30s\e[0m\n" "Cluster Name" "Cluster ID" "Livy Endpoint" "Livy TCP Check"
 
 for INST in $(aws emr list-clusters --active  --query "Clusters[].[join(',',[Name,Id])]" --output text); do
     CLUSTER_NAME=$(echo "$INST" | cut -d , -f 1)
@@ -31,5 +31,5 @@ for INST in $(aws emr list-clusters --active  --query "Clusters[].[join(',',[Nam
     CLUSTER_IP=$(_getMasterIp "$CLUSTER_ID")
     TCP_CHECK_RESULT=$(_checkConnect "$CLUSTER_IP")
 
-    printf "%-32s %-28s %-60s\n" "$CLUSTER_NAME" "http://$CLUSTER_IP:$LIVY_PORT" "$TCP_CHECK_RESULT"
+    printf "%-32s %-20s %-28s %-30s\n" "$CLUSTER_NAME" "$CLUSTER_ID" "http://$CLUSTER_IP:$LIVY_PORT" "$TCP_CHECK_RESULT"
 done
