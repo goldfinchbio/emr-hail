@@ -104,7 +104,8 @@ Parameters:
   pEmrInstanceRootVolSize:
     Default: "100"
     Description: "Required - GB.  Root volume size for ALL cluster instances."
-    MinValue: "60"
+    MaxValue: "100"
+    MinValue: "10"
     Type: "Number"
 
   pEmrInstanceTerminationProtection:
