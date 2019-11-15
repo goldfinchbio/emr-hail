@@ -375,7 +375,6 @@ Resources:
             livy.file.local-dir-whitelist: "/home/hadoop/"
             livy.server.session.timeout: "168h"          # 1 week
             livy.server.session.timeout-check: "false"   # Do not terminate idle sessions
-            livy.rsc.launcher.port.range: "10500~10550"  # Expand RPC port range and shift above other server ranges
         - Classification: "spark-env"
           Configurations:
             - Classification: "export"
@@ -455,6 +454,15 @@ Resources:
               - "if test -d /opt/vep/; then chown -R hadoop:hadoop /opt/vep; fi"
             Jar: "command-runner.jar"
           Name: "vepOwnership"
+        - ActionOnFailure: "CONTINUE"
+          HadoopJarStep:
+            Args:
+              - "sudo"
+              - "bash"
+              - "-c"
+              - "echo 'livy.rsc.launcher.port.range 10500~10550' > /etc/livy/conf/livy-client.conf"
+            Jar: "command-runner.jar"
+          Name: "livyRscExpandPortRange"
         - ActionOnFailure: "CONTINUE"
           HadoopJarStep:
             Args:
