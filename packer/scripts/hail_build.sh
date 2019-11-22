@@ -49,6 +49,7 @@ function install_prereqs {
   scikit-learn
   scipy
   seaborn
+  statsmodels
   umap-learn
   utils
   wheel"

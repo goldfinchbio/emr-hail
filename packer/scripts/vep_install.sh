@@ -47,6 +47,7 @@ function install_prereqs {
         Digest::MD5 \
         GD \
         HTTP::Tiny \
+        JSON \
         Module::Build \
         Try::Tiny
 

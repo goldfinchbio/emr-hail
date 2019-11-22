@@ -82,14 +82,21 @@ Public AMIs are available in specific regions. Select the AMI for your target re
 
 | Region    | Hail Version | VEP Version | EMR Version | AMI ID                |
 |:---------:|:------------:|:-----------:|:-----------:|:--------------------: |
-| us-east-1 | 0.2.25       | 98          | 5.27.0      | ami-0d213446773ba72fc |
-| us-east-2 | 0.2.25       | 98          | 5.27.0      | ami-0e163aa9450175813 |
-| us-west-2 | 0.2.25       | 98          | 5.27.0      | ami-0c6e3d97775f87e7d |
+| us-east-1 | 0.2.27       | 98          | 5.28.0      | ami-0eff76d452e943507 |
+| us-east-2 | 0.2.27       | 98          | 5.28.0      | ami-074bd78cf15dce0a5 |
+| us-west-2 | 0.2.27       | 98          | 5.28.0      | ami-010e68c2c559b37cf |
+| us-east-1 | 0.2.25       | 98          | 5.27.0      | ami-0b16f8ef3418e707a |
+| us-east-2 | 0.2.25       | 98          | 5.27.0      | ami-0fc5abc51396918fd |
+| us-west-2 | 0.2.25       | 98          | 5.27.0      | ami-0feddab8068926b24 |
+
 
 ### Hail Only
 
 | Region    | Hail Version | EMR Version | AMI ID                |
 |:---------:|:------------:|:-----------:|:--------------------: |
-| us-east-1 | 0.2.25       | 5.27.0      | ami-0f92e4d60264526f1 |
-| us-east-2 | 0.2.25       | 5.27.0      | ami-0e380f02cad61caf6 |
-| us-west-2 | 0.2.25       | 5.27.0      | ami-0e9d8a565c24d708b |
+| us-east-1 | 0.2.27       | 5.28.0      | ami-038d051a8baaf60ff |
+| us-east-2 | 0.2.27       | 5.28.0      | ami-0b6d8fea9018ff7ac |
+| us-west-2 | 0.2.27       | 5.28.0      | ami-096d1b6615904cbe0 |
+| us-east-1 | 0.2.25       | 5.27.0      | ami-073f98d578b35345d |
+| us-east-2 | 0.2.25       | 5.27.0      | ami-0c2ab8dbb74c44e36 |
+| us-west-2 | 0.2.25       | 5.27.0      | ami-0842116d93dd08609 |
