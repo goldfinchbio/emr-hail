@@ -9,7 +9,7 @@ This repository contains resources for repeatable deployments of [Hail](https://
   - [hail-jupyter](#hail-jupyter)
   - [hail-ami](#hail-ami)
   - [hail-emr](#hail-emr)
-  - [Autoscaling Task Nodes](#autoscaling-task-nodes)
+    - [Autoscaling Task Nodes](#autoscaling-task-nodes)
     - [Plotting](#plotting)
     - [SSM Access](#ssm-access)
 - [Deployment Order](#deployment-order)
@@ -65,11 +65,11 @@ Review the [expanded documentation](packer/readme.md) for further details.
 
 This template deploys the EMR cluster using the custom Hail AMI.  There is a single master node, a minimum of 1 core node, and optional autoscaling task nodes.
 
-### Autoscaling Task Nodes
+#### Autoscaling Task Nodes
 
 Task nodes can be set to `0` to omit them.   The target market, `SPOT` or `ON_DEMAND`, is also set via parameters.  If `SPOT` is selected, the bid price is set to the current on demand price of the selected instance type.
 
-The following scaling actions are set by default.
+The following scaling actions are set by default:
 
 - +2 instances when YARNMemoryAvailablePercentage < 15 % over 5 min
 - +2 instances when ContainerPendingRatio > .75 over 5 min
@@ -106,6 +106,9 @@ Public AMIs are available in specific regions. Select the AMI for your target re
 
 | Region    | Hail Version | VEP Version | EMR Version | AMI ID                |
 |:---------:|:------------:|:-----------:|:-----------:|:--------------------: |
+| us-east-1 | 0.2.29       | 98          | 5.28.0      | ami-0b016dfca524fec33 |
+| us-east-2 | 0.2.29       | 98          | 5.28.0      | ami-082b3c5dadecc4a87 |
+| us-west-2 | 0.2.29       | 98          | 5.28.0      | ami-0aa2d49e3149759e9 |
 | us-east-1 | 0.2.27       | 98          | 5.28.0      | ami-0eff76d452e943507 |
 | us-east-2 | 0.2.27       | 98          | 5.28.0      | ami-074bd78cf15dce0a5 |
 | us-west-2 | 0.2.27       | 98          | 5.28.0      | ami-010e68c2c559b37cf |
@@ -117,6 +120,9 @@ Public AMIs are available in specific regions. Select the AMI for your target re
 
 | Region    | Hail Version | EMR Version | AMI ID                |
 |:---------:|:------------:|:-----------:|:--------------------: |
+| us-east-1 | 0.2.29       | 5.28.0      | ami-05e440db5d3e3bcba |
+| us-east-2 | 0.2.29       | 5.28.0      | ami-064ce48aad3e10749 |
+| us-west-2 | 0.2.29       | 5.28.0      | ami-0d8c99d07ae2ebc5b |
 | us-east-1 | 0.2.27       | 5.28.0      | ami-038d051a8baaf60ff |
 | us-east-2 | 0.2.27       | 5.28.0      | ami-0b6d8fea9018ff7ac |
 | us-west-2 | 0.2.27       | 5.28.0      | ami-096d1b6615904cbe0 |
