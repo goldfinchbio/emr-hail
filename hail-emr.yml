@@ -8,13 +8,21 @@ Parameters:
     Description: "Required - packer built in the local account"
     Type: "AWS::EC2::Image::Id"
 
+  pAllowSsmShell:
+    AllowedValues:
+      - "false"
+      - "true"
+    Default: "false"
+    Description: "Required - Allow Systems Manager (SSM) shell access from Sagemaker notebooks.  Must also be set to true on SageMaker CloudFormation stacks."
+    Type: "String"
+
   pClusterName:
     Description: "Required"
     MinLength: 3
     Type: "String"
 
   pEmrCoreInstanceCount:
-    Default: 1
+    Default: 2
     Description: "Required - must be 1 or greater."
     MinValue: 1 # Cannot be 0.
     Type: "Number"
@@ -97,6 +105,20 @@ Parameters:
       - "r4.4xlarge"
       - "r4.8xlarge"
       - "r4.16xlarge"
+      - "r5.xlarge"
+      - "r5.2xlarge"
+      - "r5.4xlarge"
+      - "r5.12xlarge"
+      - "r5a.xlarge"
+      - "r5a.2xlarge"
+      - "r5a.4xlarge"
+      - "r5a.12xlarge"
+      - "r5a.24xlarge"
+      - "r5d.xlarge"
+      - "r5d.2xlarge"
+      - "r5d.4xlarge"
+      - "r5d.12xlarge"
+      - "r5d.24xlarge"
     Default: "m5.2xlarge"
     Description: "Required"
     Type: "String"
@@ -113,7 +135,7 @@ Parameters:
       - "true"
       - "false"
     Default: "false"
-    Description: "Required - Applies to all EC2 Instances in the cluster."
+    Description: "Required - Applies to Master and Core Nodes in the cluster."
     Type: "String"
 
   pEmrMasterInstanceSize:
@@ -201,7 +223,107 @@ Parameters:
       - "r5d.4xlarge"
       - "r5d.12xlarge"
       - "r5d.24xlarge"
-    Default: "m5.2xlarge"
+    Default: "r5.4xlarge"
+    Type: "String"
+
+  pEmrMinTaskNodeCount:
+    Default: 1
+    Description: "Required - Value of 0 disables task nodes and auto scaling."
+    Type: "Number"
+
+  pEmrMaxTaskNodeCount:
+    Default: 1
+    Description: "Required - must be equal to or greater than minimum."
+    MaxValue: 50
+    Type: "Number"
+
+  pEmrTaskNodeSize:
+    AllowedValues:
+      - "c1.medium"
+      - "c1.xlarge"
+      - "c3.xlarge"
+      - "c3.2xlarge"
+      - "c3.4xlarge"
+      - "c3.8xlarge"
+      - "c4.large"
+      - "c4.xlarge"
+      - "c4.2xlarge"
+      - "c4.4xlarge"
+      - "c4.8xlarge"
+      - "c5.xlarge"
+      - "c5.2xlarge"
+      - "c5.4xlarge"
+      - "c5.9xlarge"
+      - "c5.18xlarge"
+      - "cc2.8xlarge"
+      - "cg1.4xlarge"
+      - "cr1.8xlarge"
+      - "d2.xlarge"
+      - "d2.2xlarge"
+      - "d2.4xlarge"
+      - "d2.8xlarge"
+      - "g2.2xlarge"
+      - "hi1.4xlarge"
+      - "hs1.8xlarge"
+      - "i2.xlarge"
+      - "i2.2xlarge"
+      - "i2.4xlarge"
+      - "i2.8xlarge"
+      - "i3.xlarge"
+      - "i3.2xlarge"
+      - "i3.4xlarge"
+      - "i3.8xlarge"
+      - "i3.16xlarge"
+      - "m1.medium"
+      - "m1.large"
+      - "m1.xlarge"
+      - "m2.xlarge"
+      - "m2.2xlarge"
+      - "m2.4xlarge"
+      - "m3.xlarge"
+      - "m3.2xlarge"
+      - "m4.large"
+      - "m4.xlarge"
+      - "m4.2xlarge"
+      - "m4.4xlarge"
+      - "m4.10xlarge"
+      - "m4.16xlarge"
+      - "m5.xlarge"
+      - "m5.2xlarge"
+      - "m5.4xlarge"
+      - "m5.12xlarge"
+      - "m5.24xlarge"
+      - "p2.xlarge"
+      - "p2.8xlarge"
+      - "p2.16xlarge"
+      - "p3.2xlarge"
+      - "p3.8xlarge"
+      - "p3.16xlarge"
+      - "r3.xlarge"
+      - "r3.2xlarge"
+      - "r3.4xlarge"
+      - "r3.8xlarge"
+      - "r4.xlarge"
+      - "r4.2xlarge"
+      - "r4.4xlarge"
+      - "r4.8xlarge"
+      - "r4.16xlarge"
+      - "r5.xlarge"
+      - "r5.2xlarge"
+      - "r5.4xlarge"
+      - "r5.12xlarge"
+      - "r5a.xlarge"
+      - "r5a.2xlarge"
+      - "r5a.4xlarge"
+      - "r5a.12xlarge"
+      - "r5a.24xlarge"
+      - "r5d.xlarge"
+      - "r5d.2xlarge"
+      - "r5d.4xlarge"
+      - "r5d.12xlarge"
+      - "r5d.24xlarge"
+    Default: "r5.4xlarge"
+    Description: "Required"
     Type: "String"
 
   pEmrReleaseLabel:
@@ -209,7 +331,8 @@ Parameters:
       - "emr-5.25.0"
       - "emr-5.26.0"
       - "emr-5.27.0"
-    Default: "emr-5.27.0"
+      - "emr-5.28.0"
+    Default: "emr-5.28.0"
     Description: "Required"
     Type: "String"
 
@@ -266,6 +389,14 @@ Parameters:
     Description: "Optional - Owner of the resources.  Person/Department, etc."
     Type: "String"
 
+  pTaskNodeMarket:
+    AllowedValues:
+      - "ON_DEMAND"
+      - "SPOT"
+    Default: "ON_DEMAND"
+    Description: "Required - on demand or spot instances.  Spot instances are used with a max bid of the on demand price."
+    Type: "String"
+
   pVpcId:
     Description: "Required"
     Type: "AWS::EC2::VPC::Id"
@@ -294,6 +425,7 @@ Metadata:
           - "pS3LogBucket"
           - "pS3HailBucket"
           - "pEmrInstanceTerminationProtection"
+          - "pAllowSsmShell"
       - Label:
           default: "Master Instance Settings"
         Parameters:
@@ -305,6 +437,13 @@ Metadata:
           - "pEmrCoreInstanceSize"
           - "pEmrCoreInstanceDataVolSize"
       - Label:
+          default: "Autoscaling Task Node Settings"
+        Parameters:
+          - "pTaskNodeMarket"
+          - "pEmrMinTaskNodeCount"
+          - "pEmrMaxTaskNodeCount"
+          - "pEmrTaskNodeSize"
+      - Label:
           default: "Tagging"
         Parameters:
           - "pTagEnvironment"
@@ -315,7 +454,7 @@ Metadata:
       pClusterName:
         default: "Cluster Name"
       pEmrCoreInstanceCount:
-        default: "Number of Core Instances"
+        default: "Number of Core Nodes"
       pEmrCoreInstanceDataVolSize:
         default: "Scratch Volume Size"
       pEmrCoreInstanceSize:
@@ -325,9 +464,15 @@ Metadata:
       pEmrInstanceTerminationProtection:
         default: "Instance Termination Protection"
       pEmrMasterInstanceSize:
-        default: "Master Instance Size"
+        default: "Master Node Size"
       pEmrReleaseLabel:
         default: "EMR Release"
+      pEmrMinTaskNodeCount:
+        default: "Minimum number of Task Nodes"
+      pEmrMaxTaskNodeCount:
+        default: "Maximum number of Task Nodes"
+      pEmrTaskNodeSize:
+        default: "Task Node Size"
       pIngressCidr:
         default: "Ingress CIDR"
       pKeyName:
@@ -346,6 +491,8 @@ Metadata:
         default: "Environment Tag"
       pTagOwner:
         default: "Owner Tag"
+      pTaskNodeMarket:
+        default: "Market"
       pVpcId:
         default: "VPC ID"
 
@@ -353,6 +500,7 @@ Metadata:
 Conditions:
 
   CondEnableEncryption: !Not [ !Equals [ !Ref pKmsEbsArn, "" ] ]
+  CondCreateTaskNodes:  !Not [ !Equals [ !Ref pEmrMaxTaskNodeCount, "0" ] ]
 
 
 Resources:
@@ -366,6 +514,7 @@ Resources:
         - Name: "Hive"
         - Name: "Livy"
         - Name: "Spark"
+      AutoScalingRole: !Ref roleEmrAutoScaling
       BootstrapActions:
         - Name: pythonDateutilReinstall
           ScriptBootstrapAction:
@@ -378,6 +527,9 @@ Resources:
               - "-I"
               - "python-dateutil"
       Configurations:
+        - Classification: "spark"
+          ConfigurationProperties:
+            maximizeResourceAllocation: "true"
         - Classification: "spark-defaults"
           ConfigurationProperties:
             spark.driver.extraClassPath: "/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/goodies/lib/emr-spark-goodies.jar:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/usr/share/aws/hmclient/lib/aws-glue-datacatalog-spark-client.jar:/usr/share/java/Hive-JSON-Serde/hive-openx-serde.jar:/usr/share/aws/sagemaker-spark-sdk/lib/sagemaker-spark-sdk.jar:/usr/share/aws/emr/s3select/lib/emr-s3-select-spark-connector.jar:/opt/hail/hail-all-spark.jar"
@@ -490,7 +642,85 @@ Resources:
           Value: !Ref pTagEnvironment
         - Key: "owner"
           Value: !Ref pTagOwner
+        - Key: "allow-emr-ssm"
+          Value: !Ref pAllowSsmShell
       VisibleToAllUsers: true
+
+  instanceGroupTaskNodes:
+    Condition: "CondCreateTaskNodes"
+    Type: "AWS::EMR::InstanceGroupConfig"
+    Properties:
+      AutoScalingPolicy:
+        Constraints:
+          MaxCapacity: !Ref pEmrMaxTaskNodeCount
+          MinCapacity: !Ref pEmrMinTaskNodeCount
+        Rules:
+          - Action:
+              SimpleScalingPolicyConfiguration:
+                AdjustmentType: "CHANGE_IN_CAPACITY"
+                CoolDown: 300
+                ScalingAdjustment: 2
+            Description: "Add 2 instances when YARN available memory < 15%"
+            Name: "yarnMemoryUseHigh"
+            Trigger:
+              CloudWatchAlarmDefinition:
+                ComparisonOperator: "LESS_THAN"
+                Dimensions:
+                  - Key: "JobFlowId"
+                    Value: !Ref cluster
+                EvaluationPeriods: 1
+                MetricName: "YARNMemoryAvailablePercentage"
+                Namespace: "AWS/ElasticMapReduce"
+                Period: 300
+                Statistic: "AVERAGE"
+                Threshold: 15.0
+                Unit: "PERCENT"
+          - Action:
+              SimpleScalingPolicyConfiguration:
+                AdjustmentType: "CHANGE_IN_CAPACITY"
+                CoolDown: 300
+                ScalingAdjustment: 2
+            Description: "Add 2 instances when pending container ratio > .75"
+            Name: "pendingContainerHigh"
+            Trigger:
+              CloudWatchAlarmDefinition:
+                ComparisonOperator: "GREATER_THAN"
+                Dimensions:
+                  - Key: "JobFlowId"
+                    Value: !Ref cluster
+                EvaluationPeriods: 1
+                MetricName: "ContainerPendingRatio"
+                Namespace: "AWS/ElasticMapReduce"
+                Period: 300
+                Statistic: "AVERAGE"
+                Threshold: 0.75
+                Unit: "COUNT"
+          - Action:
+              SimpleScalingPolicyConfiguration:
+                AdjustmentType: "CHANGE_IN_CAPACITY"
+                CoolDown: 300
+                ScalingAdjustment: -2
+            Description: "Remove 2 instances when YARN available memory > 75%"
+            Name: "yarnMemoryUseLow"
+            Trigger:
+              CloudWatchAlarmDefinition:
+                ComparisonOperator: "GREATER_THAN"
+                Dimensions:
+                  - Key: "JobFlowId"
+                    Value: !Ref cluster
+                EvaluationPeriods: 1
+                MetricName: "YARNMemoryAvailablePercentage"
+                Namespace: "AWS/ElasticMapReduce"
+                Period: 300
+                Statistic: "AVERAGE"
+                Threshold: 0.75
+                Unit: "PERCENT"
+      InstanceCount: !Ref pEmrMinTaskNodeCount
+      InstanceRole: "TASK"
+      InstanceType: !Ref pEmrTaskNodeSize
+      JobFlowId: !Ref cluster
+      Market: !Ref pTaskNodeMarket
+      Name: "Task Instance Group"
 
   instanceProfileEmrEc2:
     Type: "AWS::IAM::InstanceProfile"
@@ -498,7 +728,7 @@ Resources:
       Path: "/"
       Roles:
         - !Ref roleEmrEc2
-      InstanceProfileName: !Join ["-",["emr-ec2", !Ref pClusterName]]
+      InstanceProfileName: !Ref roleEmrEc2
 
   policyEc2EbsEncryption:
     Condition: "CondEnableEncryption"
@@ -583,6 +813,24 @@ Resources:
                 Action: "cloudformation:DescribeStacks"
                 Resource: !Ref "AWS::StackId"
       RoleName: !Join ["-",["emr-ec2", !Ref pClusterName]]
+
+  roleEmrAutoScaling:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2008-10-17"
+        Statement:
+          - Sid: ""
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "elasticmapreduce.amazonaws.com"
+                - "application-autoscaling.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforAutoScalingRole"
+      RoleName: !Join ["-", ["emr-autoscaling", !Ref pClusterName]]
 
   # Add full ingress from master.  Separate from in group rules to prevent cyclical dependencies.
   sgIngressEmrMaster:

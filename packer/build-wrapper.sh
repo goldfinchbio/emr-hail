@@ -3,7 +3,6 @@
 # Wraps the build process for validations, etc
 #
 
-# TODO: make a build specifically to build new VEP cache base on version
 # TODO: validate environment variables before execution
 
 REPOSITORY_URL="https://github.com/hail-is/hail.git"
