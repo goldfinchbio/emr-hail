@@ -1,6 +1,6 @@
 # Hail on EMR
 
-This repository contains resources for repeatable deployments of [Hail](https://hail.is) on AWS EMR and an [AWS Sagemaker](https://aws.amazon.com/sagemaker/faqs) notebook instance configuration to interaction with the Hail cluster.
+This repository contains resources for repeatable deployments of [Hail](https://hail.is) on AWS EMR and an [AWS Sagemaker](https://aws.amazon.com/sagemaker/faqs) notebook instance configuration to interact with the Hail cluster.
 
 ## Table of Contents
 
@@ -54,6 +54,8 @@ Post upload, the bucket contents should look similar to this:
 2019-09-30 14:14:36       1244 scripts/list-clusters
 2019-09-30 14:14:36       1244 scripts/ssm
 ```
+
+It is recommended that this template be deployed in the same subnet as your EMR cluster.
 
 ### hail-ami
 
