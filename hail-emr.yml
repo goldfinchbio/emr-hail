@@ -5,7 +5,7 @@ Description: "EMR with Hail and VEP"
 Parameters:
 
   pAmi:
-    Description: "Required - packer built in the local account"
+    Description: "Required - Packer built in the local account, or use public AMI from repo"
     Type: "AWS::EC2::Image::Id"
 
   pAllowSsmShell:
