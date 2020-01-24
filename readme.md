@@ -20,18 +20,20 @@ This ReadMe will walk through deployment steps, and highlight potential pitfalls
 
 ## Table of Contents
 
-- [Deployment Guide](#deployment-guide)
-- [CloudFormation Templates](#cloudformation-templates)
-  - [hail-s3](#hail-s3)
-  - [hail-jupyter](#hail-jupyter)
-  - [hail-ami](#hail-ami)
-  - [hail-emr](#hail-emr)
-    - [Autoscaling Task Nodes](#autoscaling-task-nodes)
-    - [Plotting](#plotting)
-    - [SSM Access](#ssm-access)
-- [Public AMIs](#public-amis)
-  - [Hail with VEP](#hail-with-vep)
-  - [Hail Only](#hail-only)
+- [Hail on EMR](#hail-on-emr)
+  - [Table of Contents](#table-of-contents)
+  - [Deployment Guide](#deployment-guide)
+  - [CloudFormation Templates](#cloudformation-templates)
+    - [hail-s3](#hail-s3)
+    - [hail-jupyter](#hail-jupyter)
+    - [hail-ami](#hail-ami)
+    - [hail-emr](#hail-emr)
+      - [Autoscaling Task Nodes](#autoscaling-task-nodes)
+      - [Plotting](#plotting)
+      - [SSM Access](#ssm-access)
+  - [Public AMIs](#public-amis)
+    - [Hail with VEP](#hail-with-vep)
+    - [Hail Only](#hail-only)
 
 
 ## Deployment Guide
@@ -138,7 +140,7 @@ The following scaling actions are set by default:
 
 - +2 instances when YARNMemoryAvailablePercentage < 15 % over 5 min
 - +2 instances when ContainerPendingRatio > .75 over 5 min
-- -2 instances when YARNMemoryAvailablePercentage > 75 % over 5 min
+- -2 instances when YARNMemoryAvailablePercentage > 80 % over 15 min
 
 #### Plotting
 
@@ -164,6 +166,9 @@ Public AMIs are available in specific regions. Select the AMI for your target re
 
 | Region    | Hail Version | VEP Version | EMR Version | AMI ID                |
 |:---------:|:------------:|:-----------:|:-----------:|:--------------------: |
+| us-east-1 | 0.2.31       | 99          | 5.29.0      | ami-0f51d75d56c8469f7 |
+| us-east-2 | 0.2.31       | 99          | 5.29.0      | ami-0ddba7b9f36e79d47 |
+| us-west-2 | 0.2.31       | 99          | 5.29.0      | ami-0af36d6360120ea35 |
 | us-east-1 | 0.2.29       | 98          | 5.28.0      | ami-0b016dfca524fec33 |
 | us-east-2 | 0.2.29       | 98          | 5.28.0      | ami-082b3c5dadecc4a87 |
 | us-west-2 | 0.2.29       | 98          | 5.28.0      | ami-0aa2d49e3149759e9 |
@@ -179,6 +184,9 @@ Public AMIs are available in specific regions. Select the AMI for your target re
 
 | Region    | Hail Version | EMR Version | AMI ID                |
 |:---------:|:------------:|:-----------:|:--------------------: |
+| us-east-1 | 0.2.31       | 5.29.0      | ami-00fbbaf3c6ca73c57 |
+| us-east-2 | 0.2.31       | 5.29.0      | ami-0daa264e629449221 |
+| us-west-2 | 0.2.31       | 5.29.0      | ami-07fc30be8fe168cdb |
 | us-east-1 | 0.2.29       | 5.28.0      | ami-05e440db5d3e3bcba |
 | us-east-2 | 0.2.29       | 5.28.0      | ami-064ce48aad3e10749 |
 | us-west-2 | 0.2.29       | 5.28.0      | ami-0d8c99d07ae2ebc5b |
