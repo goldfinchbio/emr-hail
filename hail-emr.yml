@@ -5,7 +5,7 @@ Description: "EMR with Hail and VEP"
 Parameters:
 
   pAmi:
-    Description: "Required - packer built in the local account"
+    Description: "Required - Packer built in the local account, or use public AMI from repo"
     Type: "AWS::EC2::Image::Id"
 
   pAllowSsmShell:
@@ -332,7 +332,8 @@ Parameters:
       - "emr-5.26.0"
       - "emr-5.27.0"
       - "emr-5.28.0"
-    Default: "emr-5.28.0"
+      - "emr-5.29.0"
+    Default: "emr-5.29.0"
     Description: "Required"
     Type: "String"
 
@@ -551,6 +552,12 @@ Resources:
             - Classification: "export"
               ConfigurationProperties:
                 PYSPARK_PYTHON: "/usr/bin/python3"
+        - Classification: "yarn-site"
+          ConfigurationProperties:
+            yarn.log-aggregation.retain-seconds: "3600"
+        - Classification: "emrfs-site"
+          ConfigurationProperties:
+            fs.s3.maxConnections: "200"
       CustomAmiId: !Ref pAmi
       EbsRootVolumeSize: !Ref pEmrInstanceRootVolSize
       Instances:
@@ -698,7 +705,7 @@ Resources:
           - Action:
               SimpleScalingPolicyConfiguration:
                 AdjustmentType: "CHANGE_IN_CAPACITY"
-                CoolDown: 300
+                CoolDown: 900
                 ScalingAdjustment: -2
             Description: "Remove 2 instances when YARN available memory > 75%"
             Name: "yarnMemoryUseLow"
@@ -708,12 +715,12 @@ Resources:
                 Dimensions:
                   - Key: "JobFlowId"
                     Value: !Ref cluster
-                EvaluationPeriods: 1
+                EvaluationPeriods: 3
                 MetricName: "YARNMemoryAvailablePercentage"
                 Namespace: "AWS/ElasticMapReduce"
                 Period: 300
                 Statistic: "AVERAGE"
-                Threshold: 0.75
+                Threshold: 80
                 Unit: "PERCENT"
       InstanceCount: !Ref pEmrMinTaskNodeCount
       InstanceRole: "TASK"

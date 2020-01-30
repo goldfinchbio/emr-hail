@@ -193,7 +193,7 @@ Resources:
               # sudo chown "ec2-user":"ec2-user" $DIRECTORY --recursive
 
               # Use the system AWS, since ec2-user may change conda environments
-              CMD="/usr/bin/aws s3 sync $DIRECTORY s3://$BUCKET/${pName}/ > /home/ec2-user/s3-backup.log 2>&1"
+              CMD="/usr/bin/aws s3 sync --exclude 'bin/*' --exclude '.sparkmagic/*' --exclude '*.ipynb_checkpoints/*' $DIRECTORY s3://$BUCKET/${pName}/ > /home/ec2-user/s3-backup.log 2>&1"
               chown "ec2-user":"ec2-user" $DIRECTORY --recursive
               # Backup the notebook details to S3 on 5 minute intervals
               cronjob="*/5 * * * * $CMD"
