@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+# SSM Wrapper for AWS CLI
+# Requires Session Manager Plugin
+# https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html
+#
+
+function _usage {
+    cat <<USAGE
+
+Usage: $0 <Instance-Id>
+
+EMR master instances must have the following tags:
+
+    allow-ssm-ingress: true
+
+USAGE
+}
+
+if [ "$#" -ne 1 ]; then
+    _usage
+    exit
+fi
+
+INSTANCE_ID=$1
+
+REGEX="^i\-([0-9a-z]{8}|[0-9a-z]{17})$"
+
+if [[ $INSTANCE_ID =~ $REGEX ]]; then
+    aws ssm start-session --target "$INSTANCE_ID"
+else
+    echo -e "\nInvalid Instance ID."
+    _usage
+fi

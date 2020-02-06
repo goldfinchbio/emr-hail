@@ -1,13 +1,14 @@
 # Hail on EMR
+
 This solution was designed to provide a reproducible, easy to deploy environment to integrate [Hail](https://hail.is) with [AWS EMR](https://aws.amazon.com/emr/faqs/?nc=sn&loc=7).  Where possible, AWS native tools have been used.
 
 ![emr-hail_1](docs/images/emr-hail.png)
 
 To integrate Hail and EMR, we leverage [Packer](https://www.packer.io/) from Hashicorp alongside [AWS CodeBuild](https://aws.amazon.com/codebuild/faqs/?nc=sn&loc=5) to create a custom AMI pre-packaged with Hail, and optionally containing the [Variant Effect Predictor (VEP)](https://uswest.ensembl.org/info/docs/tools/vep/index.html).  Then, an EMR cluster is launched using this custom AMI.
 
-Users access Jupyter via a SageMaker notebook hosted in AWS, and pass commands to Hail from the notebook via [Apache Livy](https://livy.incubator.apache.org/).  
+Users access Jupyter via a SageMaker notebook hosted in AWS, and pass commands to Hail from the notebook via [Apache Livy](https://livy.incubator.apache.org/).
 
-This repository contains CloudFormation templates, scripts, and sample notebooks which will enable you to deploy this solution in your own AWS account. Certain parts of this repository assume a working knowledge of:  AWS, CloudFormation, S3, EMR, Hail, Jupyter, SageMaker, EC2, Packer, and shell scripting.  
+This repository contains CloudFormation templates, scripts, and sample notebooks which will enable you to deploy this solution in your own AWS account. Certain parts of this repository assume a working knowledge of:  AWS, CloudFormation, S3, EMR, Hail, Jupyter, SageMaker, EC2, Packer, and shell scripting.
 
 The repository is organized into several directories:
 
@@ -16,7 +17,6 @@ The repository is organized into several directories:
 - jupyter - Sample Jupyter Notebook for SageMaker deployment
 
 This ReadMe will walk through deployment steps, and highlight potential pitfalls.
-
 
 ## Table of Contents
 
@@ -35,14 +35,13 @@ This ReadMe will walk through deployment steps, and highlight potential pitfalls
     - [Hail with VEP](#hail-with-vep)
     - [Hail Only](#hail-only)
 
-
 ## Deployment Guide
+
 _Note:  This process will create S3 buckets, IAM resources, AMI build resources, a SageMaker notebook, and an EMR cluster.  These resources may not be covered by the AWS Free Tier, and may generate significant cost.  For up to date information, refer to the [AWS Pricing page](https://aws.amazon.com/pricing/)._
 
 _You will require elevated IAM privileges in AWS, ideally AdministratorAccess, to complete this process._
 
-
-To deploy Hail on EMR, follow these steps:  
+To deploy Hail on EMR, follow these steps:
 
 1. Log into your AWS account, and access the CloudFormation console
 
@@ -62,11 +61,9 @@ To deploy Hail on EMR, follow these steps:
 
 Note that follow these steps _in order_ is crucial, as resources created by one stack may be used as parameter entries to later stacks.  For detailed information about individual templates (including troubleshooting), see the following section.
 
-
 ## CloudFormation Templates
 
 This section contains detailed descriptions of the CloudFormation templates discussed in the [Deployment Guide](#deployment-guide).
-
 
 ### hail-s3
 
@@ -80,12 +77,11 @@ The template consumes 3 parameters, and creates 3 S3 buckets with [Server-Side E
 
 *Note: S3 bucket names MUST be unique.  If the S3 bucket name is in use elsewhere, deployment will fail.*
 
-
 ### hail-jupyter
 
-This template can be deployed _multiple times_ (one per user).  
+This template can be deployed _multiple times_ (one per user).
 
-The template deploys a SageMaker notebook instance which will be used for operations against the Hail EMR cluster.  The user's `/home/ec2-user/SageMaker` directory is backed up via crontab to the SageMaker Jupyter bucket created in the previous step with the `hail-s3` CloudFormation template.  
+The template deploys a SageMaker notebook instance which will be used for operations against the Hail EMR cluster.  The user's `/home/ec2-user/SageMaker` directory is backed up via crontab to the SageMaker Jupyter bucket created in the previous step with the `hail-s3` CloudFormation template.
 
 The user's notebook instance will have full control via the AWS CLI over their respective S3 subdirectory.  For example, if a notebook instance is named `aperry`, the user has full control of S3 objects in `s3://YOUR_JUPYTER_BUCKET/aperry/` from the terminal on that instance via the AWS CLI.
 
@@ -111,18 +107,17 @@ Post upload, the bucket contents should look similar to this:
 2019-09-30 14:14:36       1244 scripts/ssm
 ```
 
-
 ### hail-ami
+
 _Note: Deployment of this template is OPTIONAL.  It is only necessary if you wish to create your own custom AMIs.  [Public AMIs](#public-amis) are published below and can be used in place of this deloyment process_
 
 This template is deployed _once_.
 
-Use this template to create your own custom Hail AMI for use with EMR.  Alternatively, instead of deploying this template, you may leverage the [public AMIs](#public-amis) listed below.  
+Use this template to create your own custom Hail AMI for use with EMR.  Alternatively, instead of deploying this template, you may leverage the [public AMIs](#public-amis) listed below.
 
 This template leverages [Packer](https://www.packer.io/) in AWS CodeBuild to create AMIs for use with EMR.  You can specify a specific Hail Version, VEP version, and target VPC and subnet.
 
 Review the [expanded documentation](packer/readme.md) for further details.
-
 
 ### hail-emr
 
@@ -156,11 +151,9 @@ Example connection from Jupyter Lab shell:
 
 ![jupyter_ssm_emr_example](docs/images/jupyter_ssm_emr_example.png)
 
-
 ## Public AMIs
 
 Public AMIs are available in specific regions. Select the AMI for your target region and deploy with the noted version of EMR for best results.
-
 
 ### Hail with VEP
 
@@ -178,7 +171,6 @@ Public AMIs are available in specific regions. Select the AMI for your target re
 | us-east-1 | 0.2.25       | 98          | 5.27.0      | ami-0b16f8ef3418e707a |
 | us-east-2 | 0.2.25       | 98          | 5.27.0      | ami-0fc5abc51396918fd |
 | us-west-2 | 0.2.25       | 98          | 5.27.0      | ami-0feddab8068926b24 |
-
 
 ### Hail Only
 

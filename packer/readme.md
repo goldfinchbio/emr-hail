@@ -14,25 +14,24 @@ The Hail master branch HEAD can be used as a build source by **omitting** the `H
 
 _Note:  Creating these custom AMIs is a complicated process and requires working knowledge of AWS CodeBuild, Packer from Hashicorp, and shell scripting.  Troubleshooting will require intimate knowledge of Hail, VEP, and their associated build processes (including knowledge of perl).  Proceed with caution._
 
-
 ## Table of Contents
 
-- [Directory Structure](#directory-structure)
-  - [Builds](#builds)
-  - [CodeBuild](#codebuild)
-  - [Scripts](#scripts)
-- [Deployment Guide](#deployment-guide)
-  - [Prerequisites](#prerequisites)
-  - [Deployment](#deployment)
-  - [Building](#building)
-- [Execute a GUI Build](#execute-a-gui-build)
-- [Execute a CLI Build](#execute-a-cli-build)
-  - [Prerequisites](#prerequisites)
-  - [Execution](#execution)
-  - [A Note on Packer](#a-note-on-packer)
-- [Troubleshooting](#troubleshooting)
-  - [AMI Exists](#ami-exists)
-
+- [Building a Custom Hail AMI](#building-a-custom-hail-ami)
+  - [Table of Contents](#table-of-contents)
+  - [Directory Structure](#directory-structure)
+    - [Builds](#builds)
+    - [CodeBuild](#codebuild)
+    - [Scripts](#scripts)
+  - [Deployment Guide](#deployment-guide)
+    - [Prerequisites](#prerequisites)
+    - [Deployment](#deployment)
+  - [Execute a GUI Build](#execute-a-gui-build)
+  - [Execute a CLI Build](#execute-a-cli-build)
+    - [Prerequisites](#prerequisites-1)
+    - [Execution](#execution)
+    - [A Note on Packer](#a-note-on-packer)
+  - [Troubleshooting](#troubleshooting)
+    - [AMI Exists](#ami-exists)
 
 ## Directory Structure
 
@@ -77,22 +76,22 @@ The `codebuild` directory contains configuration items related to AWS CodeBuild,
 
 The `scripts` directory contains bash scripts supporting the build components (VEP, Hail, supporting python packages, etc.).  These scripts may be referenced from [amazon-linux.json](amazon-linux.json).  Scripts in this directory are linted with [ShellCheck](https://github.com/koalaman/shellcheck).
 
-
 ## Deployment Guide
 
 ### Prerequisites
+
 - AWS CLI profile with access to copy files to the S3 bucket/path specified in the CloudFormation template
 - [Packer installed](https://www.packer.io/downloads.html) if executing a CLI build
 
-
 ### Deployment
+
 To build a custom Hail AMI for use with EMR, follow these steps:
 
 1. Deploy the S3 resources described in the [Deployment Guide](/readme.md#deployment-guide) contained in the `hail-s3.yml` template
 
 2. Deploy the AWS CodeBuild resources described in the [Deployment Guide](/readme.md#deployment-guide) contained in the `hail-ami.yml` template
 
-3. If you'll be using [VEP](https://useast.ensembl.org/info/docs/tools/vep/index.html), [configure your VEP cache](docs/vep-install.md).  
+3. If you'll be using [VEP](https://useast.ensembl.org/info/docs/tools/vep/index.html), [configure your VEP cache](docs/vep-install.md).
 
 _NOTE: If using VEP, the VEP GRCh37 cache, GRCh38 cache, and LOFTEE data files archives MUST be in your Hail S3 bucket.  Review the [VEP pre-installation instructions](vep-install.md) for details_
 
@@ -100,8 +99,7 @@ _NOTE: If using VEP, the VEP GRCh37 cache, GRCh38 cache, and LOFTEE data files a
 
 OR
 
-4b. Follow the steps for to [execute a CLI build](#execute-a-cli-build) 
-
+4b. Follow the steps for to [execute a CLI build](#execute-a-cli-build)
 
 ## Execute a GUI Build
 
@@ -121,8 +119,8 @@ Once the build beings you can optionally tail logs to view progress.  Closing th
 
 ![codebuild_2](docs/images/codebuild_running.png)
 
-
 ## Execute a CLI Build
+
 To execute a build using the CLI, follow these steps.
 
 ### Prerequisites
@@ -161,8 +159,8 @@ Builds are executed via the [build wrapper](build-wrapper.sh).  This wrapper has
                     --vpc-var-file builds/vpcs/account123-vpc01.vars
   ```
 
-
 ### A Note on Packer
+
 Each time a file changes under the `packer` directory you must zip and push directory up to S3.  CodeBuild will pull this zip file in for each build.
 
 From the `hail/packer` directory, zip the contents and move it to an S3 bucket/key that matches the parameters set in your CloudFormation.
@@ -193,7 +191,6 @@ From the `hail/packer` directory, zip the contents and move it to an S3 bucket/k
 14:35 $ aws s3 mv packer.zip s3://YOUR-BUCKET/ami/packer.zip
 move: ./packer.zip to s3://YOUR-BUCKET/ami/packer.zip
 ```
-
 
 ## Troubleshooting
 
