@@ -1,11 +1,28 @@
 # Hail on EMR
 
-This repository contains resources for repeatable deployments of [Hail](https://hail.is) on AWS EMR and an [AWS Sagemaker](https://aws.amazon.com/sagemaker/faqs) notebook instance configuration to interact with the Hail cluster.
+This solution was designed to provide a reproducible, easy to deploy environment to integrate [Hail](https://hail.is) with [AWS EMR](https://aws.amazon.com/emr/faqs/?nc=sn&loc=7).  Where possible, AWS native tools have been used.
+
+![emr-hail_1](docs/images/emr-hail.png)
+
+To integrate Hail and EMR, we leverage [Packer](https://www.packer.io/) from Hashicorp alongside [AWS CodeBuild](https://aws.amazon.com/codebuild/faqs/?nc=sn&loc=5) to create a custom AMI pre-packaged with Hail, and optionally containing the [Variant Effect Predictor (VEP)](https://uswest.ensembl.org/info/docs/tools/vep/index.html).  Then, an EMR cluster is launched using this custom AMI.
+
+Users access Jupyter via a SageMaker notebook hosted in AWS, and pass commands to Hail from the notebook via [Apache Livy](https://livy.incubator.apache.org/).
+
+This repository contains CloudFormation templates, scripts, and sample notebooks which will enable you to deploy this solution in your own AWS account. Certain parts of this repository assume a working knowledge of:  AWS, CloudFormation, S3, EMR, Hail, Jupyter, SageMaker, EC2, Packer, and shell scripting.
+
+The repository is organized into several directories:
+
+- cloudformation - Contains the templates used to deploy resources in AWS
+- packer - Documenation and example configuration of Packer (used in the AMI build process)
+- jupyter - Sample Jupyter Notebook for SageMaker deployment
+
+This ReadMe will walk through deployment steps, and highlight potential pitfalls.
 
 ## Table of Contents
 
 - [Hail on EMR](#hail-on-emr)
   - [Table of Contents](#table-of-contents)
+  - [Deployment Guide](#deployment-guide)
   - [CloudFormation Templates](#cloudformation-templates)
     - [hail-s3](#hail-s3)
     - [hail-jupyter](#hail-jupyter)
@@ -14,33 +31,66 @@ This repository contains resources for repeatable deployments of [Hail](https://
       - [Autoscaling Task Nodes](#autoscaling-task-nodes)
       - [Plotting](#plotting)
       - [SSM Access](#ssm-access)
-  - [Deployment Order](#deployment-order)
   - [Public AMIs](#public-amis)
     - [Hail with VEP](#hail-with-vep)
     - [Hail Only](#hail-only)
 
+## Deployment Guide
+
+_Note:  This process will create S3 buckets, IAM resources, AMI build resources, a SageMaker notebook, and an EMR cluster.  These resources may not be covered by the AWS Free Tier, and may generate significant cost.  For up to date information, refer to the [AWS Pricing page](https://aws.amazon.com/pricing/)._
+
+_You will require elevated IAM privileges in AWS, ideally AdministratorAccess, to complete this process._
+
+To deploy Hail on EMR, follow these steps:
+
+1. Log into your AWS account, and access the CloudFormation console
+
+2. Deploy the [hail-s3.yml](#hail-s3) template to create S3 resources, ensuring you use unique names for the S3 buckets
+
+3. Once the `hail-s3` stack deployment completes, deploy the [hail-jupyter.yml](#hail-jupyter) template to create the SageMaker notebook instance
+
+4. At this point you have created S3 buckets, and now have a SageMaker notebook instance you can log into.  You may repeat Step 3 as needed for multiple users.  For more details, see the [hail-jupyter](#hail-jupyter) section below
+
+5. Once the `hail-jupyter` stack deployment completes, deploy the [hail-ami.yml](#hail-ami) template to create the custom AMI build process using CodeBuild and Packer (note that this step is optional if you intend to use the public AMIs listed below)
+
+6. If you do not intend to use the public AMIs, follow the [expanded documentation](packer/readme.md) to create your Hail AMIs
+
+7. Once the AMI build is complete (or you have selected your public AMI), deploy the [hail-emr.yml](#hail-emr) template to create the EMR cluster using a custom Hail AMI.  Note that you _must_ deploy the EMR cluster in the same subnet that you deployed the SageMaker notebook in step 4, otherwise you may run into routing issues
+
+8. After the `hail-emr` stack deployment completes, you may log into the Jupyter notebook and access the Hail cluster
+
+Note that follow these steps _in order_ is crucial, as resources created by one stack may be used as parameter entries to later stacks.  For detailed information about individual templates (including troubleshooting), see the following section.
+
 ## CloudFormation Templates
+
+This section contains detailed descriptions of the CloudFormation templates discussed in the [Deployment Guide](#deployment-guide).
 
 ### hail-s3
 
-This template is deployed once and creates 3 S3 buckets with SSE encryption.
+This template is deployed _once_.
+
+The template consumes 3 parameters, and creates 3 S3 buckets with [Server-Side Encryption](https://docs.aws.amazon.com/AmazonS3/latest/dev/serv-side-encryption.html) (SSE).
 
 - Hail Bucket - contains VEP cache and configuration JSON for Hail
 - Log Bucket - EMR logs will be written here
 - SageMaker Jupyter Bucket - Users notebooks will be backed up here, and common/example notebooks will be stored here as well.
 
+*Note: S3 bucket names MUST be unique.  If the S3 bucket name is in use elsewhere, deployment will fail.*
+
 ### hail-jupyter
 
-This template can be deployed multiple times (one per user).  It will deploy a SageMaker notebook instance for operations against the Hail EMR cluster.  The user's `/home/ec2-user/SageMaker` directory will be backed up via crontab to the SageMaker Jupyter bucket created in the `hail-s3` CloudFormation template.  The user's SageMaker notebook instance will have full S3 CLI control over their respective subdirectory.
+This template can be deployed _multiple times_ (one per user).
 
-For example, if a notebook instance is named `aperry` the user could open a terminal on that instance and have full AWS CLI control on objects under `s3://YOUR_JUPYTER_BUCKET/aperry/`.
+The template deploys a SageMaker notebook instance which will be used for operations against the Hail EMR cluster.  The user's `/home/ec2-user/SageMaker` directory is backed up via crontab to the SageMaker Jupyter bucket created in the previous step with the `hail-s3` CloudFormation template.
 
-When a new SageMaker instance launches it will sync in any scripts in the following directories located in the root of the bucket to the noted locations.
+The user's notebook instance will have full control via the AWS CLI over their respective S3 subdirectory.  For example, if a notebook instance is named `aperry`, the user has full control of S3 objects in `s3://YOUR_JUPYTER_BUCKET/aperry/` from the terminal on that instance via the AWS CLI.
 
-- common-notebooks => /home/ec2-user/SageMaker/common-notebooks
-- scripts => /home/ec2-user/SageMaker/bin
+When a new notebook instance launches, the instance will sync in any scripts in the following directories located in the root of the bucket to the following locations on the local instance:
 
-You may wish to seed those directories in S3 with the identically named directories under `jupyter` in this repository.  Doing so will allow for a working Hail Plotting example.
+- `common-notebooks` => `/home/ec2-user/SageMaker/common-notebooks`
+- `scripts` => `/home/ec2-user/SageMaker/bin`
+
+You may wish to seed those directories in S3 with the identically named directories under `emr-hail/jupyter` in this repository.  Doing so will allow for a working Hail Plotting example.
 
 CLI Example from repository root directory:
 
@@ -57,9 +107,13 @@ Post upload, the bucket contents should look similar to this:
 2019-09-30 14:14:36       1244 scripts/ssm
 ```
 
-It is recommended that this template be deployed in the same subnet as your EMR cluster.
-
 ### hail-ami
+
+_Note: Deployment of this template is OPTIONAL.  It is only necessary if you wish to create your own custom AMIs.  [Public AMIs](#public-amis) are published below and can be used in place of this deloyment process_
+
+This template is deployed _once_.
+
+Use this template to create your own custom Hail AMI for use with EMR.  Alternatively, instead of deploying this template, you may leverage the [public AMIs](#public-amis) listed below.
 
 This template leverages [Packer](https://www.packer.io/) in AWS CodeBuild to create AMIs for use with EMR.  You can specify a specific Hail Version, VEP version, and target VPC and subnet.
 
@@ -67,7 +121,11 @@ Review the [expanded documentation](packer/readme.md) for further details.
 
 ### hail-emr
 
+This template can be deployed _multiple times_ (one per cluster).
+
 This template deploys the EMR cluster using the custom Hail AMI.  There is a single master node, a minimum of 1 core node, and optional autoscaling task nodes.
+
+_Note:  The EMR cluster MUST be deployed in the same subnet as the Jupyter notebook.  Otherwise, you may see ephemeral routing issues._
 
 #### Autoscaling Task Nodes
 
@@ -92,15 +150,6 @@ The [AWS Systems Manager Agent](https://docs.aws.amazon.com/systems-manager/late
 Example connection from Jupyter Lab shell:
 
 ![jupyter_ssm_emr_example](docs/images/jupyter_ssm_emr_example.png)
-
-## Deployment Order
-
-For expected results, deploy the templates in the following order.  Resources created by one stack may be used as parameter entries to later stacks.
-
-1. hail-s3.yml
-2. hail-jupyter.yml
-3. hail-ami.yml
-4. hail-emr.yml
 
 ## Public AMIs
 
