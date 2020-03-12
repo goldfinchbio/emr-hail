@@ -557,7 +557,7 @@ Resources:
             yarn.log-aggregation.retain-seconds: "3600"
         - Classification: "emrfs-site"
           ConfigurationProperties:
-            fs.s3.maxConnections: "200"
+            fs.s3.maxConnections: "1000"
       CustomAmiId: !Ref pAmi
       EbsRootVolumeSize: !Ref pEmrInstanceRootVolSize
       Instances:
