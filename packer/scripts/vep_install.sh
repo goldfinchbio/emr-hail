@@ -3,12 +3,12 @@
 # VEP
 #
 # Requirements:
-#   HAIL_BUCKET env var must be passed in via packer
+#   RODA_BUCKET env var must be passed in via packer
 #   VEP_VERSION env var must be passed in via packer
-#   homo_sapiens VEP cache must exist for both GRCh37 and GRCh38 in $HAIL_BUCKET
+#   homo_sapiens VEP cache must exist for both GRCh37 and GRCh38 in $RODAL_BUCKET
 #
 # Notes:
-#   Both homo-sapiens GRCh37 and GRCh38 cache are synced in from s3://$HAIL_BUCKET
+#   Both homo-sapiens GRCh37 and GRCh38 cache are synced in from s3://$RODA_BUCKET
 #
 
 set -xe
@@ -19,9 +19,9 @@ GSUTIL_SOURCE="https://storage.googleapis.com/pub/gsutil.tar.gz"
 GSUTIL_TARGET_DIR="/opt"
 REPOSITORY_URL="https://github.com/Ensembl/ensembl-vep.git"
 export VEP_CACHE_DIR="/opt/vep/cache"
-export VEP_S3_SOURCE="s3://$HAIL_BUCKET"
+export VEP_S3_SOURCE="s3://$RODA_BUCKET"
 export VEP_S3_CACHE_PATH="/vep/cache"
-export VEP_S3_LOFTEE_PATH="/vep/loftee_data"
+export VEP_S3_LOFTEE_PATH="/loftee_data"
 export VEP_SPECIES="homo_sapiens"
 export VEP_DIR="/opt/vep"
 export PATH="$PATH:/usr/local/bin"
@@ -66,10 +66,10 @@ function vep_install {
     mkdir -p "$VEP_CACHE_DIR"
 
     # Confirm cache exists in S3
-    echo -e "Confirming that the VEP cache exists in $HAIL_BUCKET"
+    echo -e "Confirming that the VEP cache exists in $RODA_BUCKET"
     POP_VEP_S3_CACHE_PATH=$(echo ${VEP_S3_CACHE_PATH#/})  # Remove leading /
-    aws s3api head-object --bucket "$HAIL_BUCKET" --key "$POP_VEP_S3_CACHE_PATH/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh37.tar.gz"
-    aws s3api head-object --bucket "$HAIL_BUCKET" --key "$POP_VEP_S3_CACHE_PATH/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh38.tar.gz"
+    aws s3api head-object --bucket "$RODA_BUCKET" --key "$POP_VEP_S3_CACHE_PATH/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh37.tar.gz"
+    aws s3api head-object --bucket "$RODA_BUCKET" --key "$POP_VEP_S3_CACHE_PATH/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh38.tar.gz"
     # Copy cache archives in, extract, and remove
     aws s3 cp "$VEP_S3_SOURCE$VEP_S3_CACHE_PATH/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh37.tar.gz" /tmp
     aws s3 cp "$VEP_S3_SOURCE$VEP_S3_CACHE_PATH/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh38.tar.gz" /tmp

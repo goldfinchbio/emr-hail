@@ -12,18 +12,20 @@ cat <<EOF
 
   usage: build-wrapper.sh [ARGUMENTS]
 
-    --hail-version  [Number Version]    - OPTIONAL.  If omitted, the current HEAD of master branch will be pulled.
-    --vep-version   [Number Version]    - OPTIONAL.  If omitted, VEP will not be included.
-    --hail-bucket   [S3 Bucket Name]    - REQUIRED
-    --var-file      [Full File Path]    - REQUIRED
-    --vpc-var-file  [Full File Path]    - REQUIRED
+    --hail-version  [Number Version]      - OPTIONAL.  If omitted, the current HEAD of master branch will be pulled.
+    --vep-version   [Number Version]      - OPTIONAL.  If omitted, VEP will not be included.
+    --hail-bucket   [Your S3 Bucket Name] - REQUIRED
+    --roda-bucket   [RODA S3 Bucket Name] - REQUIRED
+    --var-file      [Full File Path]      - REQUIRED
+    --vpc-var-file  [Full File Path]      - REQUIRED
 
     Example:
 
-   build-wrapper.sh --hail-version 0.2.18 \\
-                    --vep-version 96 \\
+   build-wrapper.sh --hail-version 0.2.33 \\
+                    --vep-version 99 \\
                     --hail-bucket YOUR_HAIL_BUCKET \\
-                    --var-file builds/emr-5.25.0.vars \\
+                    --roda-bucket hail-vep-pipeline \\
+                    --var-file builds/emr-5.29.0.vars \\
                     --vpc-var-file builds/vpcs/account123-vpc01.vars
 
 EOF
@@ -50,6 +52,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         --hail-bucket)
             HAIL_BUCKET="$2"
+            shift
+            shift
+            ;;
+        --roda-bucket)
+            RODA_BUCKET="$2"
             shift
             shift
             ;;
@@ -86,6 +93,7 @@ packer build --var hail_name_version="$HAIL_NAME_VERSION" \
              --var hail_version="$HAIL_VERSION" \
              --var vep_version="$VEP_VERSION" \
              --var hail_bucket="$HAIL_BUCKET" \
+             --var roda_bucket="$RODA_BUCKET" \
              --var-file="$CORE_VAR_FILE" \
              --var-file="$VPC_VAR_FILE" \
              amazon-linux.json

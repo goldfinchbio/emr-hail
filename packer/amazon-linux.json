@@ -47,7 +47,8 @@
       "type": "shell",
       "environment_vars": [
         "VEP_VERSION={{user `vep_version`}}",
-        "HAIL_BUCKET={{user `hail_bucket`}}"
+        "HAIL_BUCKET={{user `hail_bucket`}}",
+        "RODA_BUCKET={{user `roda_bucket`}}"
       ],
       "execute_command": "sudo -S bash -c '{{ .Vars }} {{ .Path }}'",
       "scripts": [

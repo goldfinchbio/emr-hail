@@ -10,9 +10,14 @@ Parameters:
     Type: "String"
 
   pS3bucketHail:
-    Description: "Required - This parameter is set by the S3 stack.  No changes should be necessary.  Optional VEP cache can be stored here."
+    Description: "Required - This parameter is set by the S3 stack.  No changes should be necessary.  You will upload Packer zip files here."
     Type: "AWS::SSM::Parameter::Value<String>"
     Default: "/hail/s3/hail"
+
+  pS3bucketRodaHail:
+    Description: "Required - This parameter is set by the S3 stack.  No changes should be necessary.  Contains VEP and LOFTEE files."
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/hail/s3/roda"
 
   pS3packerZipLocation:
     Default: "ami/packer.zip"
@@ -29,12 +34,15 @@ Metadata:
         Parameters:
           - "pS3bucketHail"
           - "pS3packerZipLocation"
+          - "pS3bucketRodaHail"
           - "pKmsEbsArn"
     ParameterLabels:
       pKmsEbsArn:
         default: "EBS KMS Key ARN"
+      pS3bucketRodaHail:
+        default: "SSM Parameter for AWS RODA Bucket"
       pS3bucketHail:
-        default: "SSM Parameter for Hail Bucket"
+        default: "SSM Parameter for the Hail Bucket"
       pS3packerZipLocation:
         default: "Packer Zip S3 Location"
 
@@ -46,34 +54,37 @@ Conditions:
 
 Resources:
 
-  hail0216vep85:
+  hailVep:
     Type: "AWS::CodeBuild::Project"
     Properties:
       Artifacts:
         Type: "NO_ARTIFACTS"
-      Description: "Hail 0.2.16 with VEP 85"
+      Description: "Specific versions of both Hail VEP"
       Environment:
         ComputeType: "BUILD_GENERAL1_SMALL"
         EnvironmentVariables:
           - Name: "CORE_VAR_FILE"
             Type: "PLAINTEXT"
-            Value: "builds/emr-5.25.0.vars"
+            Value: "builds/emr-5.29.0.vars"
           - Name: "VPC_VAR_FILE"
             Type: "PLAINTEXT"
             Value: "builds/vpcs/YOUR_VPC_VAR_FILE.vars"
           - Name: "HAIL_VERSION"
             Type: "PLAINTEXT"
-            Value: "0.2.16"
+            Value: "0.2.XX"
           - Name: "VEP_VERSION"
             Type: "PLAINTEXT"
-            Value: "85"
+            Value: "XX"
           - Name: "HAIL_BUCKET"
             Type: "PLAINTEXT"
             Value: !Ref pS3bucketHail
-        Image: "alpine"
+          - Name: "RODA_BUCKET"
+            Type: "PLAINTEXT"
+            Value: !Ref pS3bucketRodaHail
+        Image: alpine
         PrivilegedMode: true
         Type: "LINUX_CONTAINER"
-      Name: "hail-0216_vep-85"
+      Name: "hail-vep"
       ServiceRole: !GetAtt roleHailPacker.Arn
       Source:
         BuildSpec: "codebuild/buildspec.yml"
@@ -81,34 +92,31 @@ Resources:
         Type: "S3"
       TimeoutInMinutes: 180
 
-  hail0216vep96:
+  hailNoVep:
     Type: "AWS::CodeBuild::Project"
     Properties:
       Artifacts:
         Type: "NO_ARTIFACTS"
-      Description: "Hail 0.2.16 with VEP 96"
+      Description: "Specific version of Hail - No VEP"
       Environment:
         ComputeType: "BUILD_GENERAL1_SMALL"
         EnvironmentVariables:
           - Name: "CORE_VAR_FILE"
             Type: "PLAINTEXT"
-            Value: "builds/emr-5.25.0.vars"
+            Value: "builds/emr-5.29.0.vars"
           - Name: "VPC_VAR_FILE"
             Type: "PLAINTEXT"
             Value: "builds/vpcs/YOUR_VPC_VAR_FILE.vars"
           - Name: "HAIL_VERSION"
             Type: "PLAINTEXT"
-            Value: "0.2.16"
-          - Name: "VEP_VERSION"
-            Type: "PLAINTEXT"
-            Value: "96"
+            Value: "0.2.xx"
           - Name: "HAIL_BUCKET"
             Type: "PLAINTEXT"
             Value: !Ref pS3bucketHail
         Image: alpine
         PrivilegedMode: true
         Type: "LINUX_CONTAINER"
-      Name: "hail-0216_vep-96"
+      Name: "hail"
       ServiceRole: !GetAtt roleHailPacker.Arn
       Source:
         BuildSpec: "codebuild/buildspec.yml"
@@ -116,63 +124,34 @@ Resources:
         Type: "S3"
       TimeoutInMinutes: 180
 
-  hail0216noVep:
+  hailMasterVep:
     Type: "AWS::CodeBuild::Project"
     Properties:
       Artifacts:
         Type: "NO_ARTIFACTS"
-      Description: "Hail 0.2.16"
+      Description: "Hail Master Branch with a specific version of VEP"
       Environment:
         ComputeType: "BUILD_GENERAL1_SMALL"
         EnvironmentVariables:
           - Name: "CORE_VAR_FILE"
             Type: "PLAINTEXT"
-            Value: "builds/emr-5.25.0.vars"
-          - Name: "VPC_VAR_FILE"
-            Type: "PLAINTEXT"
-            Value: "builds/vpcs/YOUR_VPC_VAR_FILE.vars"
-          - Name: "HAIL_VERSION"
-            Type: "PLAINTEXT"
-            Value: "0.2.16"
-          - Name: "HAIL_BUCKET"
-            Type: "PLAINTEXT"
-            Value: !Ref pS3bucketHail
-        Image: alpine
-        PrivilegedMode: true
-        Type: "LINUX_CONTAINER"
-      Name: "hail-0216"
-      ServiceRole: !GetAtt roleHailPacker.Arn
-      Source:
-        BuildSpec: "codebuild/buildspec.yml"
-        Location: !Sub "${pS3bucketHail}/${pS3packerZipLocation}"
-        Type: "S3"
-      TimeoutInMinutes: 180
-
-  hailMasterVep96:
-    Type: "AWS::CodeBuild::Project"
-    Properties:
-      Artifacts:
-        Type: "NO_ARTIFACTS"
-      Description: "Hail Master Branch with VEP 96"
-      Environment:
-        ComputeType: "BUILD_GENERAL1_SMALL"
-        EnvironmentVariables:
-          - Name: "CORE_VAR_FILE"
-            Type: "PLAINTEXT"
-            Value: "builds/emr-5.25.0.vars"
+            Value: "builds/emr-5.29.0.vars"
           - Name: "VPC_VAR_FILE"
             Type: "PLAINTEXT"
             Value: "builds/vpcs/YOUR_VPC_VAR_FILE.vars"
           - Name: "VEP_VERSION"
             Type: "PLAINTEXT"
-            Value: "96"
+            Value: "XX"
           - Name: "HAIL_BUCKET"
             Type: "PLAINTEXT"
             Value: !Ref pS3bucketHail
+          - Name: "RODA_BUCKET"
+            Type: "PLAINTEXT"
+            Value: !Ref pS3bucketRodaHail
         Image: alpine
         PrivilegedMode: true
         Type: "LINUX_CONTAINER"
-      Name: "hail-master_vep-96"
+      Name: "hail-master_vep"
       ServiceRole: !GetAtt roleHailPacker.Arn
       Source:
         BuildSpec: "codebuild/buildspec.yml"
@@ -185,13 +164,13 @@ Resources:
     Properties:
       Artifacts:
         Type: "NO_ARTIFACTS"
-      Description: "Hail Master Branch"
+      Description: "Hail Master Branch - No VEP"
       Environment:
         ComputeType: "BUILD_GENERAL1_SMALL"
         EnvironmentVariables:
           - Name: "CORE_VAR_FILE"
             Type: "PLAINTEXT"
-            Value: "builds/emr-5.25.0.vars"
+            Value: "builds/emr-5.29.0.vars"
           - Name: "VPC_VAR_FILE"
             Type: "PLAINTEXT"
             Value: "builds/vpcs/YOUR_VPC_VAR_FILE.vars"
@@ -267,15 +246,22 @@ Resources:
                   - !Join ["", ["arn:aws:logs:*:", !Ref "AWS::AccountId", ":log-group:/aws/codebuild/*"]]
               - Effect: "Allow"
                 Action:
-                  - "s3:PutObject"
                   - "s3:GetObject"
                   - "s3:GetObjectVersion"
-                Resource: !Sub "arn:aws:s3:::${pS3bucketHail}/*"
+                Resource:
+                  - !Sub "arn:aws:s3:::${pS3bucketHail}/*"
+                  - !Sub "arn:aws:s3:::${pS3bucketRodaHail}/*"
               - Effect: "Allow"
                 Action:
                   - "s3:GetBucketLocation"
                   - "s3:ListBucket"
-                Resource: !Sub "arn:aws:s3:::${pS3bucketHail}"
+                Resource:
+                  - !Sub "arn:aws:s3:::${pS3bucketHail}"
+                  - !Sub "arn:aws:s3:::${pS3bucketRodaHail}"
+              - Effect: "Allow"
+                Action: s3:PutObject"
+                Resource:
+                  - !Sub "arn:aws:s3:::${pS3bucketHail}/*"
         - PolicyName: "CodeBuildServiceEc2Vpc"
           PolicyDocument:
             Version: 2012-10-17
