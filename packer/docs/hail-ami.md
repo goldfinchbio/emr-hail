@@ -32,25 +32,32 @@ From the `hail/packer` directory, zip the contents and move it to an S3 bucket/k
 14:31 $ zip packer.zip -r ./
   adding: codebuild/ (stored 0%)
   adding: codebuild/buildspec.yml (deflated 38%)
-  adding: build-wrapper.sh (deflated 61%)
+  adding: readme.md (deflated 63%)
+  adding: build-wrapper.sh (deflated 65%)
   adding: builds/ (stored 0%)
-  adding: builds/emr-5.25.0.vars (deflated 42%)
+  adding: builds/emr-5.28.0.vars (deflated 40%)
+  adding: builds/emr-5.29.0.vars (deflated 40%)
+  adding: builds/emr-5.25.0.vars (deflated 40%)
+  adding: builds/emr-5.27.0.vars (deflated 40%)
   adding: builds/vpcs/ (stored 0%)
-  adding: builds/vpcs/vpc01.vars.example (deflated 34%)
-  adding: ReadMe.md (deflated 57%)
+  adding: builds/vpcs/vpc01.vars (deflated 18%)
+  adding: builds/vpcs/vpc01.vars.example (deflated 33%)
   adding: docs/ (stored 0%)
+  adding: docs/vep-install.md (deflated 76%)
   adding: docs/hail-ami.md (deflated 59%)
   adding: docs/images/ (stored 0%)
-  adding: docs/images/codebuild_running.png (deflated 3%)
-  adding: docs/images/codebuild_start.png (deflated 3%)
+  adding: docs/images/codebuild_environment_override.png (deflated 7%)
+  adding: docs/images/codebuild_running.png (deflated 7%)
+  adding: docs/images/codebuild_start.png (deflated 1%)
   adding: scripts/ (stored 0%)
+  adding: scripts/cluster_manifest.sh (deflated 57%)
   adding: scripts/ami_cleanup.sh (deflated 37%)
   adding: scripts/samtools.sh (deflated 39%)
   adding: scripts/htslib.sh (deflated 42%)
-  adding: scripts/hail_build.sh (deflated 54%)
-  adding: scripts/vep_install.sh (deflated 65%)
+  adding: scripts/hail_build.sh (deflated 56%)
+  adding: scripts/vep_install.sh (deflated 66%)
   adding: scripts/R_install.R (deflated 32%)
-  adding: amazon-linux.json (deflated 69%)
+  adding: amazon-linux.json (deflated 70%)
 14:35 $ aws s3 mv packer.zip s3://YOUR-BUCKET/ami/packer.zip
 move: ./packer.zip to s3://YOUR-BUCKET/ami/packer.zip
 ```
@@ -60,15 +67,18 @@ move: ./packer.zip to s3://YOUR-BUCKET/ami/packer.zip
 Before building, keep the following in mind:
 
 - Builds can take upwards of 90 minutes.
-- You must have VEP cache in your S3 bucket for the version of VEP you're building for
 - AMI names are unique.  If building an updated AMI, deregister the previous.
 
-From the AWS CodeBuild dashboard, select the desired build's radio button and click **Start build**.
+From the AWS CodeBuild dashboard, select **Build projects** then the desired build's radio button and click **Start build**.
 
 ![codebuild_1](images/codebuild_start.png)
 
-On the next page you may optionally override any build parameters then click **Start build**.
+On the next page open the **Environment vairable override** section and enter values specific to your build.
+
+The `VEP_VERSION` identifies what version of VEP the build will pull from the `RODA_BUCKET`.  Values in red should be updated on each build based on files you've updated or included in your `packer.zip` upload. Values in green should not require adjustment unless you've explictly customized the CloudFormation templates.
+
+![codebuild_2](images/codebuild_environment_override.png)
 
 Once the build beings you can optionally tail logs to view progress.  Closing this window will not terminate the build.
 
-![codebuild_2](images/codebuild_running.png)
+![codebuild_3](images/codebuild_running.png)

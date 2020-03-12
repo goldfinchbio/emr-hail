@@ -59,7 +59,7 @@ Resources:
     Properties:
       Artifacts:
         Type: "NO_ARTIFACTS"
-      Description: "Specific versions of both Hail VEP"
+      Description: "Specific versions of both Hail and VEP"
       Environment:
         ComputeType: "BUILD_GENERAL1_SMALL"
         EnvironmentVariables:

@@ -39,34 +39,19 @@ Below is a diagram of the directory structure, followed by a description of the 
 
 ```tree -L 3
 .
-├── amazon-linux.json
 ├── builds
-│   ├── emr-5.25.0.vars
 │   └── vpcs
-│       └── vpc01.vars.example
-├── build-wrapper.sh
 ├── codebuild
-│   └── buildspec.yml
 ├── docs
-│   ├── hail-ami.md
 │   └── images
-│       ├── codebuild_running.png
-│       └── codebuild_start.png
-├── ReadMe.md
 └── scripts
-    ├── ami_cleanup.sh
-    ├── hail_build.sh
-    ├── htslib.sh
-    ├── R_install.R
-    ├── samtools.sh
-    └── vep_install.sh
 ```
 
 ### Builds
 
 The `builds` directory contains variable definitions that are used as arguments to the primary build JSON, [amazon-linux.json](amazon-linux.json).
 
-Target VPCs, which may exist in remote accounts, are broken out into individual files under `builds/vpcs`.  There is an example VPC var file in the repository.  Note that after any adjustments to the settings or files in `builds/vpcs` you will need to update the path to that file in the [hail-ami.yml](../hail-ami.yml) CloudFormation template for the appropriate CodeBuild project.
+Target VPCs, which may exist in remote accounts, are broken out into individual files under `builds/vpcs`.  There is an example VPC var file in the repository.  The subnet ID variable in your var file must be a public subnet.  This allows the packer process in CodeBuild to connect to your instance via SSH.   Note that after any adjustments to the settings or files in `builds/vpcs` you will need to update the path to that file in the [hail-ami.yml](../hail-ami.yml) CloudFormation template for the appropriate CodeBuild project.
 
 ### CodeBuild
 
@@ -91,9 +76,7 @@ To build a custom Hail AMI for use with EMR, follow these steps:
 
 2. Deploy the AWS CodeBuild resources described in the [Deployment Guide](/readme.md#deployment-guide) contained in the `hail-ami.yml` template
 
-3. If you'll be using [VEP](https://useast.ensembl.org/info/docs/tools/vep/index.html), [configure your VEP cache](docs/vep-install.md).
-
-_NOTE: If using VEP, the VEP GRCh37 cache, GRCh38 cache, and LOFTEE data files archives MUST be in your Hail S3 bucket.  Review the [VEP pre-installation instructions](vep-install.md) for details_
+3. If you'll be using [VEP](https://useast.ensembl.org/info/docs/tools/vep/index.html) it will be pulled in from the [Registry of Open Data on AWS](https://registry.opendata.aws) (RODA).  There is no action required outside setting your VEP version during the CodeBuild operation.
 
 4a. Follow the steps for to [execute a GUI build](#execute-a-gui-build)
 
@@ -105,8 +88,7 @@ OR
 
 Before building, keep the following in mind:
 
-- Builds can take a _very_ long time (upwards of 1-2 hours in some cases)
-- You MUST have VEP cache in your S3 bucket for the version of VEP you're building for
+- Builds including VEP can take a _very_ long time (upwards of 1-2 hours in some cases)
 - AMI names are unique.  If building an updated AMI, deregister the previous
 
 From the AWS CodeBuild dashboard, select the desired build's radio button and click **Start build**.
@@ -144,18 +126,20 @@ Builds are executed via the [build wrapper](build-wrapper.sh).  This wrapper has
   ```bash
   usage: build-wrapper.sh [ARGUMENTS]
 
-    --hail-version  [Number Version]    - OPTIONAL.  If omitted, the current HEAD of master branch will be pulled.
-    --vep-version   [Number Version]    - OPTIONAL.  If omitted, VEP will not be included.
-    --hail-bucket   [S3 Bucket Name]    - REQUIRED
-    --var-file      [Full File Path]    - REQUIRED
-    --vpc-var-file  [Full File Path]    - REQUIRED
+    --hail-version  [Number Version]      - OPTIONAL.  If omitted, the current HEAD of master branch will be pulled.
+    --vep-version   [Number Version]      - OPTIONAL.  If omitted, VEP will not be included.
+    --hail-bucket   [Your S3 Bucket Name] - REQUIRED
+    --roda-bucket   [RODA S3 Bucket Name] - REQUIRED
+    --var-file      [Full File Path]      - REQUIRED
+    --vpc-var-file  [Full File Path]      - REQUIRED
 
     Example:
 
-   build-wrapper.sh --hail-version 0.2.18 \
-                    --vep-version 96 \
+   build-wrapper.sh --hail-version 0.2.33 \
+                    --vep-version 99 \
                     --hail-bucket YOUR_HAIL_BUCKET \
-                    --var-file builds/emr-5.25.0.vars \
+                    --roda-bucket hail-vep-pipeline \
+                    --var-file builds/emr-5.29.0.vars \
                     --vpc-var-file builds/vpcs/account123-vpc01.vars
   ```
 
