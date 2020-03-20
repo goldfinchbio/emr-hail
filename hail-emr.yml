@@ -920,3 +920,5 @@ Resources:
           Value: !Ref pTagEnvironment
         - Key: "owner"
           Value: !Ref pTagOwner
+        - Key: "workspace"
+          Value: "Hail"
