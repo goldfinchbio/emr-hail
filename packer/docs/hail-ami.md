@@ -19,7 +19,6 @@ The Hail master branch HEAD can be used as a build source by **omitting** the `H
 ## Prerequisites
 
 - `hail-ami.yml` CloudFormation template successfully deployed
-- If using [VEP](https://useast.ensembl.org/info/docs/tools/vep/index.html), the VEP GRCh37 cache, GRCh38 cache, and LOFTEE data files archives must be in your Hail S3 bucket.  Review the [VEP pre-installation instructions](vep-install.md) for details.
 - AWS CLI profile with access to copy files to the S3 bucket/path specified in the CloudFormation template
 
 ## Deployment
@@ -35,13 +34,7 @@ From the `hail/packer` directory, zip the contents and move it to an S3 bucket/k
   adding: readme.md (deflated 63%)
   adding: build-wrapper.sh (deflated 65%)
   adding: builds/ (stored 0%)
-  adding: builds/emr-5.28.0.vars (deflated 40%)
   adding: builds/emr-5.29.0.vars (deflated 40%)
-  adding: builds/emr-5.25.0.vars (deflated 40%)
-  adding: builds/emr-5.27.0.vars (deflated 40%)
-  adding: builds/vpcs/ (stored 0%)
-  adding: builds/vpcs/vpc01.vars (deflated 18%)
-  adding: builds/vpcs/vpc01.vars.example (deflated 33%)
   adding: docs/ (stored 0%)
   adding: docs/vep-install.md (deflated 76%)
   adding: docs/hail-ami.md (deflated 59%)
@@ -73,9 +66,9 @@ From the AWS CodeBuild dashboard, select **Build projects** then the desired bui
 
 ![codebuild_1](images/codebuild_start.png)
 
-On the next page open the **Environment vairable override** section and enter values specific to your build.
+On the next page open the **Environment variable override** section and enter values specific to your build.
 
-The `VEP_VERSION` identifies what version of VEP the build will pull from the `RODA_BUCKET`.  Values in red should be updated on each build based on files you've updated or included in your `packer.zip` upload. Values in green should not require adjustment unless you've explictly customized the CloudFormation templates.
+The `VEP_VERSION` identifies what version of VEP the build will pull from the AWS Registry of Online Data (RODA) S3 bucket. The `CORE_VAR_FILE` should be updated appropriately if you adjust the var file location in your `packer.zip`.  Values in green may be adjusted if desired.  Their defaults are set via CloudFormation.
 
 ![codebuild_2](images/codebuild_environment_override.png)
 

@@ -3,12 +3,7 @@
 # VEP
 #
 # Requirements:
-#   RODA_BUCKET env var must be passed in via packer
-#   VEP_VERSION env var must be passed in via packer
-#   homo_sapiens VEP cache must exist for both GRCh37 and GRCh38 in $RODAL_BUCKET
-#
-# Notes:
-#   Both homo-sapiens GRCh37 and GRCh38 cache are synced in from s3://$RODA_BUCKET
+#   RODA_BUCKET and VEP_VERSION env vars must be passed in via packer
 #
 
 set -xe
@@ -22,9 +17,9 @@ export VEP_CACHE_DIR="/opt/vep/cache"
 export VEP_S3_SOURCE="s3://$RODA_BUCKET"
 export VEP_S3_CACHE_PATH="/vep/cache"
 export VEP_S3_LOFTEE_PATH="/loftee_data"
-export VEP_SPECIES="homo_sapiens"
 export VEP_DIR="/opt/vep"
 export PATH="$PATH:/usr/local/bin"
+export LC_ALL=en_US.UTF-8
 
 function install_prereqs {
     yum -y install \
@@ -64,15 +59,7 @@ function gsutil_install {
 
 function vep_install {
     mkdir -p "$VEP_CACHE_DIR"
-
-    # Confirm cache exists in S3
-    echo -e "Confirming that the VEP cache exists in $RODA_BUCKET"
-    POP_VEP_S3_CACHE_PATH=$(echo ${VEP_S3_CACHE_PATH#/})  # Remove leading /
-    aws s3api head-object --bucket "$RODA_BUCKET" --key "$POP_VEP_S3_CACHE_PATH/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh37.tar.gz"
-    aws s3api head-object --bucket "$RODA_BUCKET" --key "$POP_VEP_S3_CACHE_PATH/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh38.tar.gz"
-    # Copy cache archives in, extract, and remove
-    aws s3 cp "$VEP_S3_SOURCE$VEP_S3_CACHE_PATH/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh37.tar.gz" /tmp
-    aws s3 cp "$VEP_S3_SOURCE$VEP_S3_CACHE_PATH/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh38.tar.gz" /tmp
+    aws s3 sync --exclude "*" --include "*vep_${VEP_VERSION}*" "$VEP_S3_SOURCE$VEP_S3_CACHE_PATH" /tmp
 
     # Install VEP - the earliest version available from GitHub is 87
     if [ "$VEP_VERSION" -ge 87 ]; then
@@ -81,19 +68,21 @@ function vep_install {
         cd ensembl-vep
         git checkout "release/$VEP_VERSION"
 
-        # Auto install (a)pi, (c)ache, and (f)asta GRCh37
-        tar --directory "$VEP_CACHE_DIR"  -xf "/tmp/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh37.tar.gz"
-        perl INSTALL.pl --DESTDIR "$VEP_DIR" --CACHEDIR "$VEP_DIR"/cache --CACHEURL "$VEP_CACHE_DIR" \
-             --AUTO acf --SPECIES "$VEP_SPECIES" --ASSEMBLY GRCh37 --NO_HTSLIB --NO_UPDATE
-        rm "/tmp/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh37.tar.gz"
+        # Auto install (a)pi
+        perl INSTALL.pl --DESTDIR "$VEP_DIR" --AUTO a --NO_HTSLIB --NO_UPDATE
 
-        # Auto install (c)ache and (f)asta GRCh38
-        tar --directory "$VEP_CACHE_DIR"  -xf "/tmp/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh38.tar.gz"
-        perl INSTALL.pl --DESTDIR "$VEP_DIR" --CACHEDIR "$VEP_DIR"/cache --CACHEURL "$VEP_CACHE_DIR" \
-             --AUTO cf --SPECIES "$VEP_SPECIES" --ASSEMBLY GRCh38 --NO_HTSLIB --NO_UPDATE
-        rm "/tmp/${VEP_SPECIES}_vep_${VEP_VERSION}_GRCh38.tar.gz"
+        # Human reference first.  37 and 38 are included
+        HUMAN_REFERENCES=( GRCh37 GRCh38 )
+        for REFERENCE in "${HUMAN_REFERENCES[@]}"
+        do
+            # Auto install (c)ache, and (f)asta
+            tar --directory "$VEP_CACHE_DIR"  -xf "/tmp/homo_sapiens_vep_${VEP_VERSION}_$REFERENCE.tar.gz"
+            perl INSTALL.pl --DESTDIR "$VEP_DIR" --CACHEDIR "$VEP_DIR"/cache --CACHEURL "$VEP_CACHE_DIR" \
+                 --AUTO cf --SPECIES homo_sapiens --ASSEMBLY "$REFERENCE" --NO_HTSLIB --NO_UPDATE
+            rm "/tmp/homo_sapiens_vep_${VEP_VERSION}_$REFERENCE.tar.gz"
+        done
 
-        # Plugins are installed to $HOME.  Install all plugins, then move to common location
+        # Plugins are installed to $HOME.  Install all (p)lugins, then move to common location
         perl INSTALL.pl --AUTO p --PLUGINS all --NO_UPDATE
         mv "$HOME/.vep/Plugins" "$VEP_DIR"/
     elif [ "$VEP_VERSION" = 85 ]; then

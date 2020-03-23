@@ -1,8 +1,0 @@
-# Set the target VPC and subnet ID, rename this file appropriately,
-# and **remove these commented lines**.
-# The renamed file will need to be added to the approrpiate
-# CodeBuild Project in hail-ami.yml.
-{
-    "subnet_id": "subnet-XXXXXXXXX",
-    "vpc_id": "vpc-XXXXXXXXX"
-}
