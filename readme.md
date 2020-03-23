@@ -170,7 +170,7 @@ Post upload, the bucket contents should look similar to this:
 
 If your cluster has been configured to mount an EFS volume, you can create [File System Access Points](https://docs.aws.amazon.com/efs/latest/ug/efs-access-points.html) (FSAPs) for individual users.  This allows users read/write access to a specific directory on EFS.   The EMR master node mounts the full EFS volume as _read only_ on `/efs`.
 
-A FSAP must be created for each notebook/user.  Because CloudFormation does not currently support FSAP creation the AWS CLI is used.
+A FSAP must be created for each notebook/user.  Because CloudFormation did not have support for FSAP creation when this process was created, the AWS CLI is used.
 
 Use the following steps to create a user specific FSAP.  The UID and GID should remain 500 and 501, respectively, for all users.
 
@@ -191,7 +191,7 @@ Use the following steps to create a user specific FSAP.  The UID and GID should 
     ```bash
     export EFS_DIRECTORY="/home/ec2-user/SageMaker/efs"
     if [ ! -d "$EFS_DIRECTORY" ]; then mkdir -p "$EFS_DIRECTORY"; fi
-    export REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/    document/ | jq -r '.region')
+    export REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document/ | jq -r '.region')
     sudo yum install -y amazon-efs-utils
     sudo sed -i "s/#region.*$/region = $REGION/" /etc/amazon/efs/efs-utils.conf
     sudo mount -t efs -o iam,tls,accesspoint=<THEIR_FSAP> <EFS_FS_ID> "$EFS_DIRECTORY"
@@ -225,6 +225,9 @@ Public AMIs are available in specific regions. Select the AMI for your target re
 
 | Region    | Hail Version | VEP Version | EMR Version | AMI ID                |
 |:---------:|:------------:|:-----------:|:-----------:|:--------------------: |
+| us-east-1 | 0.2.32       | 99          | 5.29.0      | ami-070a61a0df447c1f9 |
+| us-east-2 | 0.2.32       | 99          | 5.29.0      | ami-0dbbc39e5b74d69fe |
+| us-west-2 | 0.2.32       | 99          | 5.29.0      | ami-00ec4cab7cfc07ebc |
 | us-east-1 | 0.2.31       | 99          | 5.29.0      | ami-0f51d75d56c8469f7 |
 | us-east-2 | 0.2.31       | 99          | 5.29.0      | ami-0ddba7b9f36e79d47 |
 | us-west-2 | 0.2.31       | 99          | 5.29.0      | ami-0af36d6360120ea35 |
@@ -236,6 +239,9 @@ Public AMIs are available in specific regions. Select the AMI for your target re
 
 | Region    | Hail Version | EMR Version | AMI ID                |
 |:---------:|:------------:|:-----------:|:--------------------: |
+| us-east-1 | 0.2.32       | 5.29.0      | ami-081a850d47216fdf9 |
+| us-east-2 | 0.2.32       | 5.29.0      | ami-06e96d4a7a55397df |
+| us-west-2 | 0.2.32       | 5.29.0      | ami-0c5bedc3759e69114 |
 | us-east-1 | 0.2.31       | 5.29.0      | ami-00fbbaf3c6ca73c57 |
 | us-east-2 | 0.2.31       | 5.29.0      | ami-0daa264e629449221 |
 | us-west-2 | 0.2.31       | 5.29.0      | ami-07fc30be8fe168cdb |
