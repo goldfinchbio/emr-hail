@@ -21,6 +21,11 @@ Parameters:
     MinLength: 3
     Type: "String"
 
+  pEfsVolumeId:
+    Description: Optional - Volume mounted read-only on /efs
+    Default: ""
+    Type: "String"
+
   pEmrCoreInstanceCount:
     Default: 2
     Description: "Required - must be 1 or greater."
@@ -445,6 +450,10 @@ Metadata:
           - "pEmrMaxTaskNodeCount"
           - "pEmrTaskNodeSize"
       - Label:
+          default: "EFS Settings"
+        Parameters:
+          - "pEfsVolumeId"
+      - Label:
           default: "Tagging"
         Parameters:
           - "pTagEnvironment"
@@ -454,6 +463,8 @@ Metadata:
         default: "Hail AMI"
       pClusterName:
         default: "Cluster Name"
+      pEfsVolumeId:
+        default: "EFS Volume ID"
       pEmrCoreInstanceCount:
         default: "Number of Core Nodes"
       pEmrCoreInstanceDataVolSize:
@@ -502,6 +513,7 @@ Conditions:
 
   CondEnableEncryption: !Not [ !Equals [ !Ref pKmsEbsArn, "" ] ]
   CondCreateTaskNodes:  !Not [ !Equals [ !Ref pEmrMaxTaskNodeCount, "0" ] ]
+  CondMountEfs: !Not [ !Equals [ !Ref pEfsVolumeId, "" ] ]
 
 
 Resources:
@@ -642,6 +654,18 @@ Resources:
               - "/usr/local/bin/cluster_manifest.sh"
             Jar: "command-runner.jar"
           Name: "clusterManifestToS3"
+        - !If
+          - CondMountEfs
+          - ActionOnFailure: "CONTINUE"
+            HadoopJarStep:
+              Args:
+                - "sudo"
+                - "bash"
+                - "-c"
+                - !Sub "yum install -y amazon-efs-utils; mkdir /efs; mount -t efs -o iam,tls ${pEfsVolumeId}:/ /efs"
+              Jar: "command-runner.jar"
+            Name: "efsMount"
+          - !Ref "AWS::NoValue"
       Tags:
         - Key: "Name"
           Value: !Ref pClusterName
@@ -772,6 +796,22 @@ Resources:
       PolicyName: "kms-ebs-access"
       Roles:
         - !Ref roleEmr
+
+  policyEfsReadOnly:
+    Condition: CondMountEfs
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "efsReadOnly"
+            Action:
+              - "elasticfilesystem:ClientMount"
+            Effect: "Allow"
+            Resource: !Sub "arn:aws:elasticfilesystem:*:${AWS::AccountId}:file-system/${pEfsVolumeId}"
+      PolicyName: "efs-mount-readonly"
+      Roles:
+        - !Ref roleEmrEc2
 
   roleEmr:
     Type: "AWS::IAM::Role"
@@ -920,5 +960,3 @@ Resources:
           Value: !Ref pTagEnvironment
         - Key: "owner"
           Value: !Ref pTagOwner
-        - Key: "workspace"
-          Value: "Hail"
