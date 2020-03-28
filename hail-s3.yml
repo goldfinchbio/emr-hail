@@ -143,7 +143,7 @@ Resources:
   hailBucketParameter:
     Type: "AWS::SSM::Parameter"
     Properties:
-      Description: "S3 bucket with Hail resources.  VEP cache, cluster manifest outputs, etc."
+      Description: "S3 bucket for cluster manifest outputs."
       Name: "/hail/s3/hail"
       Tags:
         environment: !Ref pTagEnvironment
@@ -151,3 +151,15 @@ Resources:
         owner: !Ref pTagOwner
       Type: "String"
       Value: !Ref pHailBucket
+
+  rodaBucketParameter:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Description: "Registry of Open Data Hail S3 Bucket.  Contains VEP and LOFTEE data."
+      Name: "/hail/s3/roda"
+      Tags:
+        environment: !Ref pTagEnvironment
+        managed-by: "cloudformation"
+        owner: !Ref pTagOwner
+      Type: "String"
+      Value: "hail-vep-pipeline"

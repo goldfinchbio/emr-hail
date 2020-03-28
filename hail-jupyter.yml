@@ -62,6 +62,11 @@ Parameters:
     Description: "Optional - Environment type for default resource tagging."
     Type: "String"
 
+  pEfsFsapId:
+    Default: ""
+    Description: "Optional - EFS file system acccess point.  If provided, IAM access will be granted to mount the FSAP.  E.g. fsap-0b3ec479999999999"
+    Type: "String"
+
   pTagOwner:
     Default: ""
     Description: "Optional - Owner of the resources.  Person/Department, etc."
@@ -102,6 +107,10 @@ Metadata:
           - "pS3bucketHail"
           - "pS3bucketJupyter"
       - Label:
+          default: "EFS Settings"
+        Parameters:
+          - "pEfsFsapId"
+      - Label:
           default: "Tagging"
         Parameters:
           - "pTagEnvironment"
@@ -115,6 +124,8 @@ Metadata:
         default: "Subnet ID"
       pIngressCidr:
         default: "Ingress CIDR"
+      pEfsFsapId:
+        default: "File System Access Point ID"
       pName:
         default: "Instance Name"
       pInstanceType:
@@ -134,6 +145,7 @@ Metadata:
 Conditions:
 
   CondAllowSsmShell: !Equals [!Ref pAllowSsmShell, "true"]
+  CondEfsFsapId: !Not [ !Equals [ !Ref pEfsFsapId, "" ] ]
 
 Resources:
 
@@ -190,10 +202,9 @@ Resources:
               find "$DIRECTORY/bin/" -type f -exec chmod -v 700 {} \;
               # Copy common organization notebooks.  This will overwrite common notebooks previously saved to the home directory
               /usr/bin/aws s3 cp s3://$BUCKET/common-notebooks/ $DIRECTORY/common-notebooks/ --recursive
-              # sudo chown "ec2-user":"ec2-user" $DIRECTORY --recursive
 
               # Use the system AWS, since ec2-user may change conda environments
-              CMD="/usr/bin/aws s3 sync --exclude 'bin/*' --exclude '.sparkmagic/*' --exclude '*.ipynb_checkpoints/*' $DIRECTORY s3://$BUCKET/${pName}/ > /home/ec2-user/s3-backup.log 2>&1"
+              CMD="/usr/bin/aws s3 sync --exclude 'bin/*' --exclude '.sparkmagic/*' --exclude 'efs/*' --exclude '*.ipynb_checkpoints/*' $DIRECTORY s3://$BUCKET/${pName}/ > /home/ec2-user/s3-backup.log 2>&1"
               chown "ec2-user":"ec2-user" $DIRECTORY --recursive
               # Backup the notebook details to S3 on 5 minute intervals
               cronjob="*/5 * * * * $CMD"
@@ -211,6 +222,11 @@ Resources:
               # Session Manager for SSM connections to EMR nodes, if desired.
               sudo yum -y install https://s3.amazonaws.com/session-manager-downloads/plugin/latest/linux_64bit/session-manager-plugin.rpm
               EOF
+
+              # Execute user's specific startup operations, if present
+              CUSTOM_USER_STARTUP_SCRIPT="$DIRECTORY/custom-user-startup.sh"
+              if [ -f "$CUSTOM_USER_STARTUP_SCRIPT" ]; then source "$CUSTOM_USER_STARTUP_SCRIPT"; fi
+
 
 
   role:
@@ -313,6 +329,26 @@ Resources:
       PolicyName: "ssm-session-by-tag"
       Roles:
         - !Ref role
+
+  policyEfsFsapFullAccess:
+    Condition: "CondEfsFsapId"
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "efsFsapFull"
+            Action:
+              - "elasticfilesystem:Client*"
+            Effect: "Allow"
+            Resource: "*"
+            Condition:
+              StringEquals:
+                "elasticfilesystem:AccessPointArn": !Sub "arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:access-point/${pEfsFsapId}"
+      PolicyName: "efs-fsap-full-access"
+      Roles:
+        - !Ref role
+
 
   sg:
     Type: "AWS::EC2::SecurityGroup"

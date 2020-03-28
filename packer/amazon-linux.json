@@ -1,8 +1,8 @@
 {
   "builders": [{
     "type": "amazon-ebs",
-    "associate_public_ip_address": "true",
-    "ssh_interface": "public_ip",
+    "associate_public_ip_address": "false",
+    "ssh_interface": "private_ip",
     "source_ami_filter": {
       "filters": {
         "virtualization-type": "hvm",
@@ -27,12 +27,14 @@
     "iam_instance_profile": "{{user `instance_profile_name`}}",
     "tags": {
       "Name": "hail-{{user `hail_name_version`}}",
-      "managed-by": "packer",
-      "packer-version": "{{packer_version}}",
       "emr-version": "{{user `emr_version`}}",
       "hail-version": "{{user `hail_version`}}",
-      "spark-version": "{{user `spark_version`}}",
+      "htslib-version": "{{user `htslib_version`}}",
+      "managed-by": "packer",
+      "packer-version": "{{packer_version}}",
+      "samtools-version": "{{user `samtools_version`}}",
       "source-ami": "{{.SourceAMIName}}",
+      "spark-version": "{{user `spark_version`}}",
       "vep-version": "{{user `vep_version`}}"
     }
   }],
@@ -47,7 +49,9 @@
       "type": "shell",
       "environment_vars": [
         "VEP_VERSION={{user `vep_version`}}",
-        "HAIL_BUCKET={{user `hail_bucket`}}"
+        "RODA_BUCKET={{user `roda_bucket`}}",
+        "HTSLIB_VERSION={{user `htslib_version`}}",
+        "SAMTOOLS_VERSION={{user `samtools_version`}}"
       ],
       "execute_command": "sudo -S bash -c '{{ .Vars }} {{ .Path }}'",
       "scripts": [
